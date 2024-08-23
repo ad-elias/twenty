@@ -29,4 +29,5 @@ export enum CoreObjectNameSingular {
   Webhook = 'webhook',
   WorkspaceMember = 'workspaceMember',
   MessageThreadSubscriber = 'messageThreadSubscriber',
+  Workflow = 'workflow',
 }
