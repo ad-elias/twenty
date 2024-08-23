@@ -1,21 +1,27 @@
 import { FieldJsonValue } from '@/object-record/record-field/types/FieldMetadata';
 import { z } from 'zod';
 
-interface DataExplorerQueryChildJoin {
+export interface DataExplorerQueryNodeSource {
+  type: 'source';
+  childNodes?: DataExplorerQueryNode[];
+  sourceObjectMetadataId?: string;
+}
+
+export interface DataExplorerQueryNodeJoin {
   type: 'join';
-  children: DataExplorerQueryChild[];
+  childNodes: DataExplorerQueryNode[];
   fieldMetadataId?: string;
   measure?: 'COUNT';
 }
 
-interface DataExplorerQueryChildSelect {
+export interface DataExplorerQueryNodeSelect {
   type: 'select';
-  children?: DataExplorerQueryChild[];
+  childNodes?: DataExplorerQueryNode[];
   fieldMetadataId?: string;
   measure?: 'AVG' | 'MAX' | 'MIN' | 'SUM';
 }
 
-const dataExplorerQueryGroupBySchema = z.object({
+const dataExplorerQueryNodeGroupBySchema = z.object({
   type: z.literal('groupBy'),
   groupBy: z.boolean().optional(),
   groups: z
@@ -29,51 +35,62 @@ const dataExplorerQueryGroupBySchema = z.object({
   includeNulls: z.boolean().optional(),
 });
 
-const dataExplorerQuerySortSchema = z.object({
-  type: z.literal('sort'),
+const dataExplorerQueryNodeOrderBySchema = z.object({
+  type: z.literal('orderBy'),
   sortBy: z.enum(['ASC', 'DESC']).optional(),
 });
 
-type DataExplorerQueryChild =
-  | DataExplorerQueryChildJoin
-  | DataExplorerQueryChildSelect
-  | z.infer<typeof dataExplorerQueryGroupBySchema>
-  | z.infer<typeof dataExplorerQuerySortSchema>;
+export type DataExplorerQueryNodeGroupBy = z.infer<
+  typeof dataExplorerQueryNodeGroupBySchema
+>;
 
-const dataExplorerQueryChildSchema: z.ZodType<DataExplorerQueryChild> = z.lazy(
+export type DataExplorerQueryNodeOrderBy = z.infer<
+  typeof dataExplorerQueryNodeOrderBySchema
+>;
+
+export type DataExplorerQueryNode =
+  | DataExplorerQueryNodeJoin
+  | DataExplorerQueryNodeSelect
+  | DataExplorerQueryNodeGroupBy
+  | DataExplorerQueryNodeOrderBy
+  | DataExplorerQueryNodeSource;
+
+const dataExplorerQueryNodeSchema: z.ZodType<DataExplorerQueryNode> = z.lazy(
   () =>
     z.union([
-      dataExplorerQueryChildJoinSchema,
-      dataExplorerQueryChildSelectSchema,
-      dataExplorerQueryGroupBySchema,
-      dataExplorerQuerySortSchema,
+      dataExplorerQueryNodeJoinSchema,
+      dataExplorerQueryNodeSelectSchema,
+      dataExplorerQueryNodeGroupBySchema,
+      dataExplorerQueryNodeOrderBySchema,
     ]),
 );
 
-const dataExplorerQueryChildJoinSchema: z.ZodType<DataExplorerQueryChildJoin> =
+export const dataExplorerQueryNodeSourceSchema: z.ZodType<DataExplorerQueryNodeSource> =
+  z.object({
+    type: z.literal('source'),
+    sourceObjectMetadataId: z.string().optional(),
+    childNodes: z.array(dataExplorerQueryNodeSchema).optional(),
+  });
+
+const dataExplorerQueryNodeJoinSchema: z.ZodType<DataExplorerQueryNodeJoin> =
   z.object({
     type: z.literal('join'),
-    children: z.array(dataExplorerQueryChildSchema),
+    childNodes: z.array(dataExplorerQueryNodeSchema),
     fieldMetadataId: z.string().optional(),
     measure: z.literal('COUNT').optional(),
   });
 
-const dataExplorerQueryChildSelectSchema: z.ZodType<DataExplorerQueryChildSelect> =
+const dataExplorerQueryNodeSelectSchema: z.ZodType<DataExplorerQueryNodeSelect> =
   z.object({
     type: z.literal('select'),
-    children: z.array(dataExplorerQueryChildSchema).optional(),
+    childNodes: z.array(dataExplorerQueryNodeSchema).optional(),
     fieldMetadataId: z.string().optional(),
     measure: z.enum(['AVG', 'MAX', 'MIN', 'SUM']).optional(),
   });
 
-export const dataExplorerQuerySchema = z.object({
-  sourceObjectMetadataId: z.string().optional(),
-  children: z.array(dataExplorerQueryChildSchema).optional(),
-});
-
-export type DataExplorerQuery = z.infer<typeof dataExplorerQuerySchema>;
+export type DataExplorerQuery = DataExplorerQueryNodeSource;
 
 export const isFieldDataExplorerQueryValue = (
   fieldValue: unknown,
 ): fieldValue is FieldJsonValue =>
-  dataExplorerQuerySchema.safeParse(fieldValue).success;
+  dataExplorerQueryNodeSourceSchema.safeParse(fieldValue).success;

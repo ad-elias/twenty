@@ -1,6 +1,5 @@
 import { CurrencyCode } from '@/object-record/record-field/types/CurrencyCode';
 import {
-  DataExplorerQuery,
   FieldActorValue,
   FieldAddressValue,
   FieldBooleanValue,
@@ -22,7 +21,7 @@ import {
   FieldTextValue,
   FieldUUidValue,
 } from '@/object-record/record-field/types/FieldMetadata';
-
+import { DataExplorerQuery } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
 export type FieldTextDraftValue = string;
 export type FieldNumberDraftValue = string;
 export type FieldDateTimeDraftValue = string;

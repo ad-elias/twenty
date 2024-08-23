@@ -307,7 +307,7 @@ export const RecordShowContainer = ({
               />
             </FieldContext.Provider>
           ))}
-          {dataExplorerQueryFieldMetadataItems.map(
+          {dataExplorerQueryFieldMetadataItems?.map(
             (fieldMetadataItem, index) => (
               <FieldContext.Provider
                 key={objectRecordId + fieldMetadataItem.id}

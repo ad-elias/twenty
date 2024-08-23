@@ -2,7 +2,6 @@ import { useContext } from 'react';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 
 import {
-  DataExplorerQuery,
   FieldDataExplorerQueryValue,
   FieldTextValue,
 } from '@/object-record/record-field/types/FieldMetadata';
@@ -11,6 +10,7 @@ import { FieldMetadataType } from '~/generated-metadata/graphql';
 
 import { useRecordFieldInput } from '@/object-record/record-field/hooks/useRecordFieldInput';
 import { isFieldDataExplorerQuery } from '@/object-record/record-field/types/guards/isFieldDataExplorerQuery';
+import { DataExplorerQuery } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
 import { FieldContext } from '../../contexts/FieldContext';
 import { assertFieldMetadata } from '../../types/guards/assertFieldMetadata';
 

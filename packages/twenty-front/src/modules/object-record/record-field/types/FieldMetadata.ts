@@ -5,6 +5,7 @@ import { ZodHelperLiteral } from '@/object-record/record-field/types/ZodHelperLi
 import { EntityForSelect } from '@/object-record/relation-picker/types/EntityForSelect';
 import { WithNarrowedStringLiteralProperty } from '~/types/WithNarrowedStringLiteralProperty';
 
+import { DataExplorerQuery } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
 import { CurrencyCode } from './CurrencyCode';
 
 export type FieldUuidMetadata = {
@@ -222,43 +223,6 @@ export type FieldRelationValue<
 
 export type Json = ZodHelperLiteral | { [key: string]: Json } | Json[];
 export type FieldJsonValue = Record<string, Json> | Json[] | null;
-
-interface DataExplorerQueryChildJoin {
-  type: 'join';
-  children: DataExplorerQueryChild;
-  fieldMetadataId?: string;
-  measure?: 'COUNT';
-}
-
-interface DataExplorerQueryChildSelect {
-  type: 'select';
-  children: DataExplorerQueryChild;
-  fieldMetadataId?: string;
-  measure?: 'AVG' | 'MAX' | 'MIN' | 'SUM';
-}
-
-interface DataExplorerQueryGroupBy {
-  type: 'groupBy';
-  groupBy?: boolean;
-  groups?: { upperLimit: number; lowerLimit: number }[];
-  includeNulls?: boolean;
-}
-
-interface DataExplorerQuerySort {
-  type: 'sort';
-  sortBy?: 'ASC' | 'DESC';
-}
-
-type DataExplorerQueryChild =
-  | DataExplorerQueryChildJoin
-  | DataExplorerQueryChildSelect
-  | DataExplorerQueryGroupBy
-  | DataExplorerQuerySort;
-
-export interface DataExplorerQuery {
-  sourceObjectMetadataId?: string;
-  children?: DataExplorerQueryChild[];
-}
 
 export type FieldDataExplorerQueryValue = DataExplorerQuery | null;
 
