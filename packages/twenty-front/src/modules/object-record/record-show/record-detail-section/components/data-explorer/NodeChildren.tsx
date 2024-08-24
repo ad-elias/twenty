@@ -1,10 +1,9 @@
 import {
   DataExplorerQueryNode,
-  DataExplorerQueryNodeJoin,
-  DataExplorerQueryNodeSelect,
-  DataExplorerQueryNodeSource,
+  DataExplorerQueryNodeWithChildren,
 } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
 import { AddNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/AddNode';
+import { AggregateFunctionNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/AggregateFunctionNode';
 import { JoinNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/JoinNode';
 import { SelectNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/SelectNode';
 import styled from '@emotion/styled';
@@ -14,30 +13,38 @@ const StyledNodeContainer = styled.div`
   padding-left: ${({ theme }) => theme.spacing(4)};
 `;
 
-interface NodeChildrenProps {
-  node:
-    | DataExplorerQueryNodeSource
-    | DataExplorerQueryNodeJoin
-    | DataExplorerQueryNodeSelect;
+interface NodeChildrenProps<T extends DataExplorerQueryNodeWithChildren> {
+  node: T;
   hotkeyScope: string;
-  onChange: (newNode: DataExplorerQueryNode) => void;
+  onChange: (newNode: T) => void;
 }
 
-export const NodeChildren = (props: NodeChildrenProps) => {
+export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
+  props: NodeChildrenProps<T>,
+) => {
+  const onChildChange = (newNode: DataExplorerQueryNode, i: number) => {
+    const childNodesBefore = props.node.childNodes?.slice(0, i) ?? [];
+    const childNodesAfter = props.node.childNodes?.slice(i + 1) ?? [];
+    props.onChange({
+      ...props.node,
+      childNodes: [...childNodesBefore, newNode, ...childNodesAfter],
+    });
+  };
+
   return (
     <>
       <StyledNodeContainer>
         <AddNode
-          node={props.node}
-          onAdd={(newNode) => {
+          parentNode={props.node}
+          onAdd={(newParentNode) => {
             props.onChange({
               ...props.node,
-              childNodes: [newNode, ...(props.node.childNodes ?? [])],
+              childNodes: [newParentNode, ...(props.node.childNodes ?? [])],
             });
           }}
         />
       </StyledNodeContainer>
-      {props.node.childNodes?.map((node) => {
+      {props.node.childNodes?.map((node, i) => {
         return (
           <StyledNodeContainer>
             {node.type === 'join' ? (
@@ -45,21 +52,27 @@ export const NodeChildren = (props: NodeChildrenProps) => {
                 parentNode={props.node}
                 node={node}
                 hotkeyScope={props.hotkeyScope}
-                onChange={() => {}}
+                onChange={() => {
+                  onChildChange(node, i);
+                }}
               />
             ) : node.type === 'select' ? (
               <SelectNode
                 parentNode={props.node}
                 node={node}
                 hotkeyScope={props.hotkeyScope}
-                onChange={() => {}}
+                onChange={() => {
+                  onChildChange(node, i);
+                }}
               />
             ) : node.type === 'aggregateFunction' ? (
               <AggregateFunctionNode
                 parentNode={props.node}
                 node={node}
                 hotkeyScope={props.hotkeyScope}
-                onChange={() => {}}
+                onChange={() => {
+                  onChildChange(node, i);
+                }}
               />
             ) : null}
           </StyledNodeContainer>

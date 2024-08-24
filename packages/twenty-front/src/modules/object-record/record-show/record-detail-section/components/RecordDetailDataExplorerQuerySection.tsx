@@ -29,27 +29,16 @@ export const RecordDetailDataExplorerQuerySection = ({
 
   const persistField = usePersistField();
 
-  const testValue: DataExplorerQuery = {
-    sourceObjectMetadataId: '20202020-b374-4779-a561-80086cb2e17f',
-    childNodes: [
-      {
-        type: 'join',
-        fieldMetadataId: '20202020-3213-4ddf-9494-6422bcff8d7c',
-        childNodes: [],
-      },
-    ],
-  };
-
   return (
     <RecordDetailSection>
       <RecordDetailSectionHeader title="Data explorer query" />
       fieldValue: {JSON.stringify(fieldValue)}
       <button
         onClick={async () => {
-          setFieldValue(testValue);
+          setFieldValue({});
         }}
       >
-        Set test fieldValue
+        Clear fieldValue
       </button>
       <button
         onClick={() => {
@@ -59,9 +48,13 @@ export const RecordDetailDataExplorerQuerySection = ({
         Persist
       </button>
       <SourceNode
-        dataExplorerQuery={fieldValue ?? {}}
+        node={fieldValue?.select}
         hotkeyScope={hotkeyScope}
-        onChange={(newDataExplorerQuery) => {
+        onChange={(newNode) => {
+          const newDataExplorerQuery: DataExplorerQuery = {
+            ...fieldValue,
+            select: newNode,
+          };
           setFieldValue(newDataExplorerQuery);
         }}
       />

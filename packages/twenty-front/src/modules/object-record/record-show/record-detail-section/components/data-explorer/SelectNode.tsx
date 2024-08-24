@@ -1,16 +1,18 @@
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import {
-  DataExplorerQuery,
+  DataExplorerQueryNode,
   DataExplorerQueryNodeSelect,
 } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
+
 import { NodeChildren } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeChildren';
 import { NodeContainer } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeContainer';
 import { NodeValue } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeValue';
 
 interface SelectNodeProps {
-  dataExplorerQuery: DataExplorerQuery;
+  parentNode: DataExplorerQueryNode;
   node: DataExplorerQueryNodeSelect;
-  nodeIndexPath: number[];
+  hotkeyScope: string;
+  onChange: (newNode?: DataExplorerQueryNodeSelect) => void;
 }
 
 export const SelectNode = (props: SelectNodeProps) => {
@@ -29,9 +31,9 @@ export const SelectNode = (props: SelectNodeProps) => {
       <NodeValue>{fieldMetadata?.label}</NodeValue>
       {props.node.childNodes && (
         <NodeChildren
-          dataExplorerQuery={props.dataExplorerQuery}
-          childNodes={props.node.childNodes}
-          nodeIndexPath={props.nodeIndexPath}
+          node={props.node}
+          hotkeyScope={props.hotkeyScope}
+          onChange={props.onChange}
         />
       )}
     </NodeContainer>

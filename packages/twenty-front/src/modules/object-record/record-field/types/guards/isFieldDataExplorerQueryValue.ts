@@ -21,47 +21,33 @@ export interface DataExplorerQueryNodeSelect {
   measure?: 'AVG' | 'MAX' | 'MIN' | 'SUM';
 }
 
-const dataExplorerQueryNodeGroupBySchema = z.object({
-  type: z.literal('groupBy'),
-  groupBy: z.boolean().optional(),
-  groups: z
-    .array(
-      z.object({
-        upperLimit: z.number(),
-        lowerLimit: z.number(),
-      }),
-    )
-    .optional(),
-  includeNulls: z.boolean().optional(),
-});
-
-const dataExplorerQueryNodeOrderBySchema = z.object({
-  type: z.literal('orderBy'),
+const dataExplorerQueryNodeAggregateFunction = z.object({
+  type: z.literal('aggregateFunction'),
   sortBy: z.enum(['ASC', 'DESC']).optional(),
 });
 
-export type DataExplorerQueryNodeGroupBy = z.infer<
-  typeof dataExplorerQueryNodeGroupBySchema
+export type DataExplorerQueryNodeAggregateFunction = z.infer<
+  typeof dataExplorerQueryNodeAggregateFunction
 >;
 
-export type DataExplorerQueryNodeOrderBy = z.infer<
-  typeof dataExplorerQueryNodeOrderBySchema
->;
+export type DataExplorerQueryNodeWithChildren =
+  | DataExplorerQueryNodeSource
+  | DataExplorerQueryNodeJoin
+  | DataExplorerQueryNodeSelect;
+
+export type DataExplorerQueryNodeWithoutChildren =
+  DataExplorerQueryNodeAggregateFunction;
 
 export type DataExplorerQueryNode =
-  | DataExplorerQueryNodeJoin
-  | DataExplorerQueryNodeSelect
-  | DataExplorerQueryNodeGroupBy
-  | DataExplorerQueryNodeOrderBy
-  | DataExplorerQueryNodeSource;
+  | DataExplorerQueryNodeWithChildren
+  | DataExplorerQueryNodeWithoutChildren;
 
 const dataExplorerQueryNodeSchema: z.ZodType<DataExplorerQueryNode> = z.lazy(
   () =>
     z.union([
       dataExplorerQueryNodeJoinSchema,
       dataExplorerQueryNodeSelectSchema,
-      dataExplorerQueryNodeGroupBySchema,
-      dataExplorerQueryNodeOrderBySchema,
+      dataExplorerQueryNodeAggregateFunction,
     ]),
 );
 
@@ -88,9 +74,34 @@ const dataExplorerQueryNodeSelectSchema: z.ZodType<DataExplorerQueryNodeSelect> 
     measure: z.enum(['AVG', 'MAX', 'MIN', 'SUM']).optional(),
   });
 
-export type DataExplorerQuery = DataExplorerQueryNodeSource;
+const dataExplorerQueryGroupBySchema = z.object({
+  groupByFieldMetadataId: z.string().optional(),
+  groups: z
+    .array(
+      z.object({
+        upperLimit: z.number(),
+        lowerLimit: z.number(),
+      }),
+    )
+    .optional(),
+  includeNulls: z.boolean().optional(),
+});
+
+const dataExplorerQueryOrderBySchema = z.object({
+  orderByFieldMetadataId: z.string().optional(),
+  direction: z.enum(['ASC', 'DESC']).optional(),
+});
+
+const dataExplorerQuerySchema = z.object({
+  select: dataExplorerQueryNodeSourceSchema.optional(),
+  groupBy: z.array(dataExplorerQueryGroupBySchema).optional(),
+  orderBy: dataExplorerQueryOrderBySchema.optional(),
+  measureFieldMetadataId: z.string().optional(),
+});
+
+export type DataExplorerQuery = z.infer<typeof dataExplorerQuerySchema>;
 
 export const isFieldDataExplorerQueryValue = (
   fieldValue: unknown,
 ): fieldValue is FieldJsonValue =>
-  dataExplorerQueryNodeSourceSchema.safeParse(fieldValue).success;
+  dataExplorerQuerySchema.safeParse(fieldValue).success;

@@ -1,6 +1,6 @@
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { FIELD_PATH_PICKER_SELECTABLE_LIST_ID } from '@/object-record/field-path-picker/constants/FieldPathPickerSelectableListId';
-import { DataExplorerQuery } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
+import { DataExplorerQueryNodeSource } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
 import { NodeChildren } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeChildren';
 import { NodeContainer } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeContainer';
 import { NodeValue } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeValue';
@@ -18,9 +18,9 @@ import { useTheme } from '@emotion/react';
 import { IconPlus, IconTallymarks, useIcons } from 'twenty-ui';
 
 interface SourceNodeProps {
-  dataExplorerQuery: DataExplorerQuery;
+  node?: DataExplorerQueryNodeSource;
   hotkeyScope: string;
-  onChange: (dataExplorerQuery: DataExplorerQuery) => void;
+  onChange: (newNode?: DataExplorerQueryNodeSource) => void;
 }
 
 export const SourceNode = (props: SourceNodeProps) => {
@@ -30,8 +30,8 @@ export const SourceNode = (props: SourceNodeProps) => {
   const { activeObjectMetadataItems, findObjectMetadataItemById } =
     useFilteredObjectMetadataItems();
 
-  const sourceObjectMetadata = props.dataExplorerQuery.sourceObjectMetadataId
-    ? findObjectMetadataItemById(props.dataExplorerQuery.sourceObjectMetadataId)
+  const sourceObjectMetadata = props.node?.sourceObjectMetadataId
+    ? findObjectMetadataItemById(props.node?.sourceObjectMetadataId)
     : undefined;
 
   const SourceObjectMetadataIcon = getIcon(sourceObjectMetadata?.icon);
@@ -75,10 +75,12 @@ export const SourceNode = (props: SourceNodeProps) => {
                       key={objectMetadata.id}
                       objectMetadata={objectMetadata}
                       onSelect={() => {
-                        props.onChange({
-                          ...props.dataExplorerQuery,
+                        const newNode = {
+                          ...props.node,
+                          type: 'source' as const,
                           sourceObjectMetadataId: objectMetadata.id,
-                        });
+                        };
+                        props.onChange(newNode);
                       }}
                     />
                   ))
@@ -89,12 +91,11 @@ export const SourceNode = (props: SourceNodeProps) => {
         }
         dropdownHotkeyScope={{ scope: props.hotkeyScope }}
       />
-      {props.dataExplorerQuery.childNodes && (
+      {props.node && (
         <NodeChildren
-          dataExplorerQuery={props.dataExplorerQuery}
-          childNodes={props.dataExplorerQuery.childNodes}
-          nodeIndexPath={[]}
+          node={props.node}
           hotkeyScope={props.hotkeyScope}
+          onChange={props.onChange}
         />
       )}
     </NodeContainer>

@@ -111,7 +111,11 @@ export const JoinNode = (props: JoinNodeProps) => {
         }
         dropdownHotkeyScope={{ scope: props.hotkeyScope }}
       />
-      <NodeChildren childNodes={props.node.childNodes} />
+      <NodeChildren
+        node={props.node}
+        hotkeyScope={props.hotkeyScope}
+        onChange={props.onChange}
+      />
     </NodeContainer>
   );
 };
