@@ -6,6 +6,7 @@ import { useDataExplorerQueryField } from '@/object-record/record-field/meta-typ
 import { DataExplorerQuery } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
 import { RecordDetailSection } from '@/object-record/record-show/record-detail-section/components/RecordDetailSection';
 import { RecordDetailSectionHeader } from '@/object-record/record-show/record-detail-section/components/RecordDetailSectionHeader';
+import { SelectedFieldDropdown } from '@/object-record/record-show/record-detail-section/components/data-explorer/SelectedFieldDropdown';
 import { SourceNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/SourceNode';
 
 type RecordDetailDataExplorerQuerySectionProps = {
@@ -31,23 +32,7 @@ export const RecordDetailDataExplorerQuerySection = ({
 
   return (
     <RecordDetailSection>
-      <RecordDetailSectionHeader title="Data explorer query" />
-      fieldValue: {JSON.stringify(fieldValue)}
-      <button
-        onClick={async () => {
-          setFieldValue({});
-        }}
-      >
-        Clear fieldValue
-      </button>
-      <button
-        style={{ marginBottom: 12 }}
-        onClick={() => {
-          persistField(fieldValue);
-        }}
-      >
-        Persist
-      </button>
+      <RecordDetailSectionHeader title="Select" />
       <SourceNode
         node={fieldValue?.select}
         hotkeyScope={hotkeyScope}
@@ -59,6 +44,60 @@ export const RecordDetailDataExplorerQuerySection = ({
           setFieldValue(newDataExplorerQuery);
         }}
       />
+      <RecordDetailSectionHeader title="Measure" />
+      <SelectedFieldDropdown
+        dataExplorerQuery={fieldValue ?? {}}
+        fieldMetadataId={fieldValue?.measureFieldMetadataId}
+        hotkeyScope={hotkeyScope}
+        onChange={(newFieldMetadataId) => {
+          const newDataExplorerQuery: DataExplorerQuery = {
+            ...fieldValue,
+            measureFieldMetadataId: newFieldMetadataId,
+          };
+          setFieldValue(newDataExplorerQuery);
+        }}
+        dropdownId="data-explorer-query-measure-dropdown"
+      />
+      <RecordDetailSectionHeader title="Group by" />
+      <SelectedFieldDropdown
+        dataExplorerQuery={fieldValue ?? {}}
+        fieldMetadataId={fieldValue?.groupBy?.[0]?.groupByFieldMetadataId}
+        hotkeyScope={hotkeyScope}
+        onChange={(newFieldMetadataId) => {
+          const newDataExplorerQuery: DataExplorerQuery = {
+            ...fieldValue,
+            groupBy: [
+              {
+                groupByFieldMetadataId: newFieldMetadataId,
+              },
+            ],
+          };
+          setFieldValue(newDataExplorerQuery);
+        }}
+        dropdownId="data-explorer-query-group-by-dropdown"
+      />
+      <RecordDetailSectionHeader title="Order by" />
+      <SelectedFieldDropdown
+        dataExplorerQuery={fieldValue ?? {}}
+        fieldMetadataId={fieldValue?.orderBy?.orderByFieldMetadataId}
+        hotkeyScope={hotkeyScope}
+        onChange={(newFieldMetadataId) => {
+          const newDataExplorerQuery: DataExplorerQuery = {
+            ...fieldValue,
+            orderBy: {
+              orderByFieldMetadataId: newFieldMetadataId,
+            },
+          };
+          setFieldValue(newDataExplorerQuery);
+        }}
+        dropdownId="data-explorer-query-order-by-dropdown"
+      />
+      <button
+        style={{ marginTop: 12 }}
+        onClick={() => persistField(fieldValue)}
+      >
+        Save
+      </button>
     </RecordDetailSection>
   );
 };
