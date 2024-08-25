@@ -10,12 +10,14 @@ import { DropdownMenu } from '@/ui/layout/dropdown/components/DropdownMenu';
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { DropdownMenuSearchInput } from '@/ui/layout/dropdown/components/DropdownMenuSearchInput';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
+import { useDropdown } from '@/ui/layout/dropdown/hooks/useDropdown';
 import { SelectableList } from '@/ui/layout/selectable-list/components/SelectableList';
 import { MenuItem } from '@/ui/navigation/menu-item/components/MenuItem';
 import { MenuItemLeftContent } from '@/ui/navigation/menu-item/internals/components/MenuItemLeftContent';
 import { StyledMenuItemBase } from '@/ui/navigation/menu-item/internals/components/StyledMenuItemBase';
 import { useTheme } from '@emotion/react';
-import { IconPlus, IconTallymarks, useIcons } from 'twenty-ui';
+import { useMemo, useState } from 'react';
+import { IconPlus, IconX, useIcons } from 'twenty-ui';
 
 interface SourceNodeProps {
   node?: DataExplorerQueryNodeSource;
@@ -26,35 +28,60 @@ interface SourceNodeProps {
 export const SourceNode = (props: SourceNodeProps) => {
   const theme = useTheme();
   const { getIcon } = useIcons();
+  const dropdownId = 'data-explorer-query-source-node';
+  const { closeDropdown } = useDropdown(dropdownId);
+
+  const [searchFilter, setSearchFilter] = useState('');
 
   const { activeObjectMetadataItems, findObjectMetadataItemById } =
     useFilteredObjectMetadataItems();
+
+  const optionsToSelect = useMemo(
+    () =>
+      activeObjectMetadataItems.filter((objectMetadata) => {
+        return (
+          objectMetadata.id !== props.node?.sourceObjectMetadataId &&
+          objectMetadata.labelPlural
+            .toLowerCase()
+            .includes(searchFilter.toLowerCase())
+        );
+      }) || [],
+    [
+      activeObjectMetadataItems,
+      searchFilter,
+      props.node?.sourceObjectMetadataId,
+    ],
+  );
 
   const sourceObjectMetadata = props.node?.sourceObjectMetadataId
     ? findObjectMetadataItemById(props.node?.sourceObjectMetadataId)
     : undefined;
 
-  const SourceObjectMetadataIcon = getIcon(sourceObjectMetadata?.icon);
+  const ObjectMetadataIcon = getIcon(sourceObjectMetadata?.icon);
 
   const noResult = false;
 
   return (
     <NodeContainer>
       <Dropdown
-        dropdownId="data-explorer-query-source-node"
+        dropdownId={dropdownId}
         clickableComponent={
           <NodeValue>
             {sourceObjectMetadata ? (
-              <SourceObjectMetadataIcon />
+              <ObjectMetadataIcon size={theme.icon.size.sm} />
             ) : (
-              <IconPlus size={theme.icon.size.md} />
+              <IconPlus size={theme.icon.size.sm} />
             )}
             {sourceObjectMetadata?.labelPlural ?? 'Select object'}
           </NodeValue>
         }
         dropdownComponents={
           <DropdownMenu>
-            <DropdownMenuSearchInput onChange={() => {}} autoFocus />
+            <DropdownMenuSearchInput
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              autoFocus
+            />
             <DropdownMenuSeparator />
             <DropdownMenuItemsContainer hasMaxHeight>
               <SelectableList
@@ -64,19 +91,24 @@ export const SourceNode = (props: SourceNodeProps) => {
                 )}
                 hotkeyScope={props.hotkeyScope}
               >
-                <StyledMenuItemBase>
-                  <MenuItemLeftContent LeftIcon={IconTallymarks} text="Clear" />
+                <StyledMenuItemBase
+                  onClick={() => {
+                    closeDropdown();
+                    props.onChange(undefined);
+                  }}
+                >
+                  <MenuItemLeftContent LeftIcon={IconX} text="Clear" />
                 </StyledMenuItemBase>
                 {noResult ? (
                   <MenuItem text="No result" />
                 ) : (
-                  activeObjectMetadataItems?.map((objectMetadata) => (
+                  optionsToSelect?.map((objectMetadata) => (
                     <ObjectSelectItem
                       key={objectMetadata.id}
                       objectMetadata={objectMetadata}
                       onSelect={() => {
+                        closeDropdown();
                         const newNode = {
-                          ...props.node,
                           type: 'source' as const,
                           sourceObjectMetadataId: objectMetadata.id,
                         };

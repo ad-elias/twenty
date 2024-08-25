@@ -1,11 +1,11 @@
 import {
   DataExplorerQueryNode,
+  DataExplorerQueryNodeJoin,
+  DataExplorerQueryNodeSelect,
   DataExplorerQueryNodeWithChildren,
 } from '@/object-record/record-field/types/guards/isFieldDataExplorerQueryValue';
-import { AddNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/AddNode';
 import { AggregateFunctionNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/AggregateFunctionNode';
-import { JoinNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/JoinNode';
-import { SelectNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/SelectNode';
+import { JoinOrSelectNode } from '@/object-record/record-show/record-detail-section/components/data-explorer/JoinOrSelectNode';
 import styled from '@emotion/styled';
 
 const StyledNodeContainer = styled.div`
@@ -31,50 +31,53 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
     });
   };
 
+  const onChildAdd = (
+    newNode?: DataExplorerQueryNodeJoin | DataExplorerQueryNodeSelect,
+  ) => {
+    if (!newNode) throw new Error('Cannot add undefined node');
+
+    props.onChange({
+      ...props.node,
+      childNodes: [newNode, ...(props.node.childNodes ?? [])],
+    });
+  };
+
   return (
     <>
       <StyledNodeContainer>
-        <AddNode
-          parentNode={props.node}
-          onAdd={(newParentNode) => {
-            props.onChange({
-              ...props.node,
-              childNodes: [newParentNode, ...(props.node.childNodes ?? [])],
-            });
-          }}
-        />
+        {props.node?.type === 'select' ? null : (
+          <JoinOrSelectNode
+            parentNode={props.node}
+            hotkeyScope={props.hotkeyScope}
+            onChange={onChildAdd}
+          />
+        )}
       </StyledNodeContainer>
-      {props.node.childNodes?.map((node, i) => {
+      {props.node.childNodes?.map((childNode, i) => {
         return (
           <StyledNodeContainer>
-            {node.type === 'join' ? (
-              <JoinNode
+            {(props.node.type === 'source' || props.node.type === 'join') &&
+            (childNode.type === 'join' || childNode.type === 'select') ? (
+              <JoinOrSelectNode
                 parentNode={props.node}
-                node={node}
+                node={childNode}
                 hotkeyScope={props.hotkeyScope}
                 onChange={() => {
-                  onChildChange(node, i);
+                  onChildChange(childNode, i);
                 }}
               />
-            ) : node.type === 'select' ? (
-              <SelectNode
-                parentNode={props.node}
-                node={node}
-                hotkeyScope={props.hotkeyScope}
-                onChange={() => {
-                  onChildChange(node, i);
-                }}
-              />
-            ) : node.type === 'aggregateFunction' ? (
+            ) : childNode.type === 'aggregateFunction' ? (
               <AggregateFunctionNode
                 parentNode={props.node}
-                node={node}
+                node={childNode}
                 hotkeyScope={props.hotkeyScope}
                 onChange={() => {
-                  onChildChange(node, i);
+                  onChildChange(childNode, i);
                 }}
               />
-            ) : null}
+            ) : (
+              'Unsupported child node'
+            )}
           </StyledNodeContainer>
         );
       })}

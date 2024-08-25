@@ -41,6 +41,7 @@ export const RecordDetailDataExplorerQuerySection = ({
         Clear fieldValue
       </button>
       <button
+        style={{ marginBottom: 12 }}
         onClick={() => {
           persistField(fieldValue);
         }}

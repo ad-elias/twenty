@@ -7,29 +7,26 @@ import { IconPlus } from 'twenty-ui';
 
 interface AddNodeProps {
   parentNode: DataExplorerQueryNodeWithChildren;
-  onAdd: (newParentNode: DataExplorerQueryNodeWithChildren) => void;
+  onAdd: (newNode: DataExplorerQueryNodeWithChildren) => void;
 }
 
 export const AddNode = (props: AddNodeProps) => {
   const theme = useTheme();
 
   return (
-    <NodeValue
-      onClick={() => {
-        const newParentNode: DataExplorerQueryNodeWithChildren = {
-          ...props.parentNode,
-          childNodes: [
-            ...(props.parentNode.childNodes ?? []),
-            {
-              type: 'join',
-              childNodes: [],
-            },
-          ],
-        };
-        props.onAdd(newParentNode);
-      }}
-    >
-      <IconPlus size={theme.icon.size.sm} />
-    </NodeValue>
+    <>
+      <NodeValue
+        onClick={() => {
+          const newNode: DataExplorerQueryNodeWithChildren = {
+            type: 'join',
+            childNodes: [],
+          };
+          props.onAdd(newNode);
+        }}
+      >
+        <IconPlus size={theme.icon.size.sm} />
+        Select field
+      </NodeValue>
+    </>
   );
 };
