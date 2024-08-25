@@ -21,9 +21,19 @@ export interface DataExplorerQueryNodeSelect {
   measure?: 'AVG' | 'MAX' | 'MIN' | 'SUM';
 }
 
+export type DataExplorerQueryAggregateFunction =
+  | 'COUNT'
+  | 'SUM'
+  | 'AVG'
+  | 'MIN'
+  | 'MAX';
+
+export const dataExplorerQueryAggregateFunctions: DataExplorerQueryAggregateFunction[] =
+  ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'];
+
 const dataExplorerQueryNodeAggregateFunction = z.object({
   type: z.literal('aggregateFunction'),
-  sortBy: z.enum(['ASC', 'DESC']).optional(),
+  aggregateFunction: z.enum(['COUNT', 'SUM', 'AVG', 'MIN', 'MAX']),
 });
 
 export type DataExplorerQueryNodeAggregateFunction = z.infer<

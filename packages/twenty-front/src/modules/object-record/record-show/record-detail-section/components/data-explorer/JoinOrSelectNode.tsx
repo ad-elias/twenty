@@ -46,7 +46,7 @@ export const JoinOrSelectNode = (props: JoinOrSelectNodeProps) => {
       ? props.parentNode.fieldMetadataId
       : props.parentNode.sourceObjectMetadataId;
 
-  const dropdownId = `data-explorer-query-${parentNodeId}-${props.node?.fieldMetadataId}`;
+  const dropdownId = `data-explorer-query-join-or-select-node-${parentNodeId}-${props.node?.fieldMetadataId}`;
 
   const { closeDropdown } = useDropdown(dropdownId);
 
@@ -157,6 +157,7 @@ export const JoinOrSelectNode = (props: JoinOrSelectNodeProps) => {
                         const newNode = isFieldRelation(fieldMetadata)
                           ? joinNode
                           : selectNode;
+                        closeDropdown();
                         props.onChange(newNode);
                       }}
                     />
@@ -172,7 +173,10 @@ export const JoinOrSelectNode = (props: JoinOrSelectNodeProps) => {
         <NodeChildren
           node={props.node}
           hotkeyScope={props.hotkeyScope}
-          onChange={props.onChange}
+          onChange={(newNode) => {
+            console.log('onChange', newNode);
+            props.onChange(newNode);
+          }}
         />
       )}
     </NodeContainer>

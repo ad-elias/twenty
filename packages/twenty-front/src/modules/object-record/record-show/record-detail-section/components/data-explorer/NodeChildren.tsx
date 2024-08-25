@@ -1,5 +1,6 @@
 import {
   DataExplorerQueryNode,
+  DataExplorerQueryNodeAggregateFunction,
   DataExplorerQueryNodeJoin,
   DataExplorerQueryNodeSelect,
   DataExplorerQueryNodeWithChildren,
@@ -13,6 +14,11 @@ const StyledNodeContainer = styled.div`
   padding-left: ${({ theme }) => theme.spacing(4)};
 `;
 
+const StyledSelectNodeRow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing(1)};
+`;
+
 interface NodeChildrenProps<T extends DataExplorerQueryNodeWithChildren> {
   node: T;
   hotkeyScope: string;
@@ -22,35 +28,60 @@ interface NodeChildrenProps<T extends DataExplorerQueryNodeWithChildren> {
 export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
   props: NodeChildrenProps<T>,
 ) => {
-  const onChildChange = (newNode: DataExplorerQueryNode, i: number) => {
+  const onChildChange = (i: number, changedNode?: DataExplorerQueryNode) => {
     const childNodesBefore = props.node.childNodes?.slice(0, i) ?? [];
     const childNodesAfter = props.node.childNodes?.slice(i + 1) ?? [];
-    props.onChange({
+    const nodeWithChangedChild = {
       ...props.node,
-      childNodes: [...childNodesBefore, newNode, ...childNodesAfter],
-    });
+      childNodes: [...childNodesBefore, changedNode, ...childNodesAfter].filter(
+        (childNode) => childNode !== undefined,
+      ),
+    };
+    console.log(
+      'onChildChange',
+      'changedNode',
+      changedNode,
+      'nodeWithChangedChild',
+      nodeWithChangedChild,
+    );
+    props.onChange(nodeWithChangedChild);
   };
 
   const onChildAdd = (
-    newNode?: DataExplorerQueryNodeJoin | DataExplorerQueryNodeSelect,
+    newNode?:
+      | DataExplorerQueryNodeJoin
+      | DataExplorerQueryNodeSelect
+      | DataExplorerQueryNodeAggregateFunction,
   ) => {
     if (!newNode) throw new Error('Cannot add undefined node');
-
-    props.onChange({
+    const nodeWithNewChild = {
       ...props.node,
       childNodes: [newNode, ...(props.node.childNodes ?? [])],
-    });
+    };
+    console.log('onChildAdd', nodeWithNewChild);
+    props.onChange(nodeWithNewChild);
   };
 
   return (
     <>
       <StyledNodeContainer>
-        {props.node?.type === 'select' ? null : (
-          <JoinOrSelectNode
-            parentNode={props.node}
-            hotkeyScope={props.hotkeyScope}
-            onChange={onChildAdd}
-          />
+        {(props.node.childNodes ?? []).every(
+          (siblingNode) => siblingNode.type !== 'aggregateFunction',
+        ) && (
+          <StyledSelectNodeRow>
+            {props.node?.type !== 'select' && (
+              <JoinOrSelectNode
+                parentNode={props.node}
+                hotkeyScope={props.hotkeyScope}
+                onChange={onChildAdd}
+              />
+            )}
+            <AggregateFunctionNode
+              parentNode={props.node}
+              hotkeyScope={props.hotkeyScope}
+              onChange={onChildAdd}
+            />
+          </StyledSelectNodeRow>
         )}
       </StyledNodeContainer>
       {props.node.childNodes?.map((childNode, i) => {
@@ -62,8 +93,8 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
                 parentNode={props.node}
                 node={childNode}
                 hotkeyScope={props.hotkeyScope}
-                onChange={() => {
-                  onChildChange(childNode, i);
+                onChange={(changedNode) => {
+                  onChildChange(i, changedNode);
                 }}
               />
             ) : childNode.type === 'aggregateFunction' ? (
@@ -71,8 +102,8 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
                 parentNode={props.node}
                 node={childNode}
                 hotkeyScope={props.hotkeyScope}
-                onChange={() => {
-                  onChildChange(childNode, i);
+                onChange={(changedNode) => {
+                  onChildChange(i, changedNode);
                 }}
               />
             ) : (
