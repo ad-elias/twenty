@@ -64,10 +64,10 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
 
   return (
     <>
-      <StyledNodeContainer>
-        {(props.node.childNodes ?? []).every(
-          (siblingNode) => siblingNode.type !== 'aggregateFunction',
-        ) && (
+      {(props.node.childNodes ?? []).every(
+        (siblingNode) => siblingNode.type !== 'aggregateFunction',
+      ) && (
+        <StyledNodeContainer>
           <StyledSelectNodeRow>
             {props.node?.type !== 'select' && (
               <JoinOrSelectNode
@@ -82,8 +82,8 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
               onChange={onChildAdd}
             />
           </StyledSelectNodeRow>
-        )}
-      </StyledNodeContainer>
+        </StyledNodeContainer>
+      )}
       {props.node.childNodes?.map((childNode, i) => {
         return (
           <StyledNodeContainer>

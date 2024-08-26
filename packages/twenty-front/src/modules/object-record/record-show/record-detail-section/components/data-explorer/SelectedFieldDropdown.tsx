@@ -108,7 +108,7 @@ export const SelectedFieldDropdown = (props: SelectedFieldDropdownProps) => {
       <Dropdown
         dropdownId={props.dropdownId}
         clickableComponent={
-          <NodeValue>
+          <NodeValue isValueEmpty={!fieldMetadata}>
             {fieldMetadata ? (
               <FieldMetadataIcon size={theme.icon.size.sm} />
             ) : (
