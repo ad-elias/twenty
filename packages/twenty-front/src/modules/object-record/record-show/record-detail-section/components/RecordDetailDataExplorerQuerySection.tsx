@@ -74,14 +74,14 @@ export const RecordDetailDataExplorerQuerySection = ({
       <StyledSection>
         <SelectedFieldDropdown
           dataExplorerQuery={fieldValue ?? {}}
-          fieldMetadataId={fieldValue?.groupBy?.[0]?.groupByFieldMetadataId}
+          fieldMetadataId={fieldValue?.groupBys?.[0]?.fieldMetadataId}
           hotkeyScope={hotkeyScope}
           onChange={(newFieldMetadataId) => {
             const newDataExplorerQuery: DataExplorerQuery = {
               ...fieldValue,
-              groupBy: [
+              groupBys: [
                 {
-                  groupByFieldMetadataId: newFieldMetadataId,
+                  fieldMetadataId: newFieldMetadataId,
                 },
               ],
             };
@@ -94,13 +94,13 @@ export const RecordDetailDataExplorerQuerySection = ({
       <StyledSection>
         <SelectedFieldDropdown
           dataExplorerQuery={fieldValue ?? {}}
-          fieldMetadataId={fieldValue?.orderBy?.orderByFieldMetadataId}
+          fieldMetadataId={fieldValue?.orderBy?.fieldMetadataId}
           hotkeyScope={hotkeyScope}
           onChange={(newFieldMetadataId) => {
             const newDataExplorerQuery: DataExplorerQuery = {
               ...fieldValue,
               orderBy: {
-                orderByFieldMetadataId: newFieldMetadataId,
+                fieldMetadataId: newFieldMetadataId,
               },
             };
             setFieldValue(newDataExplorerQuery);

@@ -1,36 +1,52 @@
-interface DataExplorerQueryChildJoin {
+export type DataExplorerQueryNodeSource = {
+  type: 'source';
+  childNodes?: DataExplorerQueryNode[];
+  sourceObjectMetadataId?: string;
+};
+
+export type DataExplorerQueryNodeJoin = {
   type: 'join';
-  children: DataExplorerQueryChild[];
+  childNodes: DataExplorerQueryNode[];
   fieldMetadataId?: string;
-  measure?: 'COUNT';
-}
+};
 
-interface DataExplorerQueryChildSelect {
+export type DataExplorerQueryNodeSelect = {
   type: 'select';
-  children?: DataExplorerQueryChild[];
+  childNodes?: DataExplorerQueryNode[];
   fieldMetadataId?: string;
-  measure?: 'AVG' | 'MAX' | 'MIN' | 'SUM';
-}
+};
 
-interface DataExplorerQueryGroupBy {
-  type: 'groupBy';
-  groupBy?: boolean;
+export type DataExplorerQueryNodeAggregateFunction = {
+  type: 'aggregateFunction';
+  aggregateFunction: 'COUNT' | 'SUM' | 'AVG' | 'MIN' | 'MAX';
+};
+
+export type DataExplorerQueryNodeWithChildren =
+  | DataExplorerQueryNodeSource
+  | DataExplorerQueryNodeJoin
+  | DataExplorerQueryNodeSelect;
+
+export type DataExplorerQueryNodeWithoutChildren =
+  DataExplorerQueryNodeAggregateFunction;
+
+export type DataExplorerQueryNode =
+  | DataExplorerQueryNodeWithChildren
+  | DataExplorerQueryNodeWithoutChildren;
+
+export type DataExplorerQueryGroupBy = {
+  fieldMetadataId?: string;
   groups?: { upperLimit: number; lowerLimit: number }[];
   includeNulls?: boolean;
-}
+};
 
-interface DataExplorerQuerySort {
-  type: 'sort';
-  sortBy?: 'ASC' | 'DESC';
-}
+export type DataExplorerQueryOrderBy = {
+  fieldMetadataId?: string;
+  direction?: 'ASC' | 'DESC';
+};
 
-type DataExplorerQueryChild =
-  | DataExplorerQueryChildJoin
-  | DataExplorerQueryChildSelect
-  | DataExplorerQueryGroupBy
-  | DataExplorerQuerySort;
-
-export interface DataExplorerQuery {
-  sourceObjectMetadataId?: string;
-  children?: DataExplorerQueryChild[];
-}
+export type DataExplorerQuery = {
+  select?: DataExplorerQueryNodeSource;
+  groupBys?: DataExplorerQueryGroupBy[];
+  orderBy?: DataExplorerQueryOrderBy;
+  measureFieldMetadataId?: string;
+};

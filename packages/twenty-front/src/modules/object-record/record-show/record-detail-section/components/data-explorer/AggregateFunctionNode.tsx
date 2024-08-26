@@ -47,6 +47,13 @@ export const AggregateFunctionNode = (props: AggregateFunctionNodeProps) => {
 
   const { closeDropdown } = useDropdown(dropdownId);
 
+  const options = dataExplorerQueryAggregateFunctions.filter(
+    (aggregateFunction) =>
+      props.parentNode.type === 'select'
+        ? aggregateFunction !== 'COUNT'
+        : aggregateFunction === 'COUNT',
+  );
+
   return (
     <NodeContainer>
       <Dropdown
@@ -71,7 +78,7 @@ export const AggregateFunctionNode = (props: AggregateFunctionNodeProps) => {
             <DropdownMenuItemsContainer hasMaxHeight>
               <SelectableList
                 selectableListId={FIELD_PATH_PICKER_SELECTABLE_LIST_ID}
-                selectableItemIdArray={dataExplorerQueryAggregateFunctions}
+                selectableItemIdArray={options}
                 hotkeyScope={props.hotkeyScope}
               >
                 <StyledMenuItemBase
@@ -82,23 +89,20 @@ export const AggregateFunctionNode = (props: AggregateFunctionNodeProps) => {
                 >
                   <MenuItemLeftContent LeftIcon={IconX} text="Clear" />
                 </StyledMenuItemBase>
-                {dataExplorerQueryAggregateFunctions.map(
-                  (aggregateFunction) => (
-                    <AggregateFunctionSelectItem
-                      key={aggregateFunction}
-                      aggregateFunction={aggregateFunction}
-                      onSelect={() => {
-                        const newNode: DataExplorerQueryNodeAggregateFunction =
-                          {
-                            type: 'aggregateFunction',
-                            aggregateFunction,
-                          };
-                        closeDropdown();
-                        props.onChange(newNode);
-                      }}
-                    />
-                  ),
-                )}
+                {options.map((aggregateFunction) => (
+                  <AggregateFunctionSelectItem
+                    key={aggregateFunction}
+                    aggregateFunction={aggregateFunction}
+                    onSelect={() => {
+                      const newNode: DataExplorerQueryNodeAggregateFunction = {
+                        type: 'aggregateFunction',
+                        aggregateFunction,
+                      };
+                      closeDropdown();
+                      props.onChange(newNode);
+                    }}
+                  />
+                ))}
               </SelectableList>
             </DropdownMenuItemsContainer>
           </DropdownMenu>

@@ -11,14 +11,12 @@ export interface DataExplorerQueryNodeJoin {
   type: 'join';
   childNodes: DataExplorerQueryNode[];
   fieldMetadataId?: string;
-  measure?: 'COUNT';
 }
 
 export interface DataExplorerQueryNodeSelect {
   type: 'select';
   childNodes?: DataExplorerQueryNode[];
   fieldMetadataId?: string;
-  measure?: 'AVG' | 'MAX' | 'MIN' | 'SUM';
 }
 
 export type DataExplorerQueryAggregateFunction =
@@ -85,7 +83,7 @@ const dataExplorerQueryNodeSelectSchema: z.ZodType<DataExplorerQueryNodeSelect> 
   });
 
 const dataExplorerQueryGroupBySchema = z.object({
-  groupByFieldMetadataId: z.string().optional(),
+  fieldMetadataId: z.string().optional(),
   groups: z
     .array(
       z.object({
@@ -98,13 +96,13 @@ const dataExplorerQueryGroupBySchema = z.object({
 });
 
 const dataExplorerQueryOrderBySchema = z.object({
-  orderByFieldMetadataId: z.string().optional(),
+  fieldMetadataId: z.string().optional(),
   direction: z.enum(['ASC', 'DESC']).optional(),
 });
 
 const dataExplorerQuerySchema = z.object({
   select: dataExplorerQueryNodeSourceSchema.optional(),
-  groupBy: z.array(dataExplorerQueryGroupBySchema).optional(),
+  groupBys: z.array(dataExplorerQueryGroupBySchema).optional(),
   orderBy: dataExplorerQueryOrderBySchema.optional(),
   measureFieldMetadataId: z.string().optional(),
 });
