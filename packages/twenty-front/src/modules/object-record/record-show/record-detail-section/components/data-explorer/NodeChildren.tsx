@@ -58,7 +58,6 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
       ...props.node,
       childNodes: [newNode, ...(props.node.childNodes ?? [])],
     };
-    console.log('onChildAdd', nodeWithNewChild);
     props.onChange(nodeWithNewChild);
   };
 

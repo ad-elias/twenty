@@ -65,11 +65,9 @@ export const JoinOrSelectNode = (props: JoinOrSelectNodeProps) => {
           fieldMetadata.id ===
           (props.parentNode as DataExplorerQueryNodeJoin).fieldMetadataId,
       );
+
     parentObjectMetadataId =
-      parentFieldMetadata?.fromRelationMetadata?.toFieldMetadataId ===
-      props.parentNode.fieldMetadataId
-        ? parentFieldMetadata?.toRelationMetadata?.fromObjectMetadata.id
-        : parentFieldMetadata?.fromRelationMetadata?.toObjectMetadata.id;
+      parentFieldMetadata?.relationDefinition?.targetObjectMetadata.id;
   } else {
     throw new Error('Invalid parent node type');
   }
@@ -174,7 +172,6 @@ export const JoinOrSelectNode = (props: JoinOrSelectNodeProps) => {
           node={props.node}
           hotkeyScope={props.hotkeyScope}
           onChange={(newNode) => {
-            console.log('onChange', newNode);
             props.onChange(newNode);
           }}
         />
