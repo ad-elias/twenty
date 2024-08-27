@@ -5,6 +5,13 @@ import { Repository } from 'typeorm';
 
 import { ChartResult } from 'src/engine/core-modules/chart/dtos/chart-result.dto';
 import { AliasPrefix } from 'src/engine/core-modules/chart/types/alias-prefix.type';
+import {
+  DataExplorerQuery,
+  DataExplorerQueryNode,
+  DataExplorerQueryNodeAggregateFunction,
+  DataExplorerQueryNodeJoin,
+  DataExplorerQueryNodeSelect,
+} from 'src/engine/core-modules/chart/types/chart-query';
 import { CommonTableExpressionDefinition } from 'src/engine/core-modules/chart/types/common-table-expression-definition.type';
 import { QueryRelation } from 'src/engine/core-modules/chart/types/query-relation.type';
 import {
@@ -23,6 +30,12 @@ import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
 import { computeObjectTargetTable } from 'src/engine/utils/compute-object-target-table.util';
 import { WorkspaceDataSourceService } from 'src/engine/workspace-datasource/workspace-datasource.service';
 import { ChartWorkspaceEntity } from 'src/modules/charts/standard-objects/chart.workspace-entity';
+
+interface NodeLike {
+  fieldMetadataId?: string;
+  childNodes?: NodeLike[];
+  [key: string]: any;
+}
 
 @Injectable()
 export class ChartService {
@@ -216,30 +229,30 @@ export class ChartService {
     });
   }
 
-  /* private getTargetSelectColumn(
-    chartQueryMeasure?: ChartQueryMeasure,
+  private getTargetSelectColumn(
+    chartQueryMeasure?: 'COUNT' | 'AVG' | 'SUM' | 'MIN' | 'MAX',
     qualifiedColumn?: string,
   ) {
     if (
       !chartQueryMeasure ||
-      (!qualifiedColumn && chartQueryMeasure !== ChartQueryMeasure.COUNT)
+      (!qualifiedColumn && chartQueryMeasure !== 'COUNT')
     ) {
       return;
     }
 
     switch (chartQueryMeasure) {
-      case ChartQueryMeasure.COUNT:
+      case 'COUNT':
         return 'COUNT(*) as measure';
-      case ChartQueryMeasure.AVERAGE:
+      case 'AVG':
         return `AVG(${qualifiedColumn}) as measure`;
-      case ChartQueryMeasure.MIN:
+      case 'MIN':
         return `MIN(${qualifiedColumn}) as measure`;
-      case ChartQueryMeasure.MAX:
+      case 'MAX':
         return `MAX(${qualifiedColumn}) as measure`;
-      case ChartQueryMeasure.SUM:
+      case 'SUM':
         return `SUM(${qualifiedColumn}) as measure`;
     }
-  } */
+  }
 
   private async getFieldMetadata(workspaceId, fieldMetadataId) {
     if (!fieldMetadataId) return;
@@ -316,35 +329,42 @@ export class ChartService {
     dataSourceSchemaName: string,
     workspaceId: string,
     sourceObjectMetadata: ObjectMetadataEntity,
-    targetRelationFieldMetadataIds?: string[],
-    targetMeasureFieldMetadata?: FieldMetadataEntity,
-    groupByRelationFieldMetadataIds?: string[],
-    groupByMeasureFieldMetadata?: FieldMetadataEntity,
+    query: DataExplorerQuery,
+    fieldMetadataById: Map<string | undefined, FieldMetadataEntity>,
   ): Promise<QueryRelation> {
     const baseTableName = computeObjectTargetTable(sourceObjectMetadata);
 
-    const targetCommonTableExpressionDefinition =
-      !targetRelationFieldMetadataIds ||
-      targetRelationFieldMetadataIds?.length === 0
-        ? await this.getCommonTableExpressionDefinition(
-            workspaceId,
-            dataSourceSchemaName,
-            baseTableName,
-            targetMeasureFieldMetadata,
-          )
-        : undefined;
+    const measureFieldMetadata = fieldMetadataById.get(
+      query.measureFieldMetadataId,
+    );
 
-    const groupByCommonTableExpressionDefinition =
-      !groupByRelationFieldMetadataIds ||
-      groupByRelationFieldMetadataIds?.length === 0
-        ? await this.getCommonTableExpressionDefinition(
-            workspaceId,
-            dataSourceSchemaName,
-            targetCommonTableExpressionDefinition?.resultSetName ??
-              baseTableName,
-            groupByMeasureFieldMetadata,
-          )
-        : undefined;
+    const targetObjectIsSourceObject =
+      measureFieldMetadata?.objectMetadataId === sourceObjectMetadata.id;
+
+    const targetCommonTableExpressionDefinition = targetObjectIsSourceObject
+      ? await this.getCommonTableExpressionDefinition(
+          workspaceId,
+          dataSourceSchemaName,
+          baseTableName,
+          measureFieldMetadata,
+        )
+      : undefined;
+
+    const groupByFieldMetadata = fieldMetadataById.get(
+      query.groupBys?.[0]?.fieldMetadataId,
+    );
+
+    const groupByObjectIsSourceObject =
+      groupByFieldMetadata?.objectMetadataId === sourceObjectMetadata.id;
+
+    const groupByCommonTableExpressionDefinition = groupByObjectIsSourceObject
+      ? await this.getCommonTableExpressionDefinition(
+          workspaceId,
+          dataSourceSchemaName,
+          targetCommonTableExpressionDefinition?.resultSetName ?? baseTableName,
+          groupByFieldMetadata,
+        )
+      : undefined;
 
     const tableName =
       groupByCommonTableExpressionDefinition?.resultSetName ??
@@ -361,6 +381,124 @@ export class ChartService {
       tableAlias: tableName,
       withQueries: withQueries,
     };
+  }
+
+  private getSelectFieldMetadataIds(
+    nodes: DataExplorerQueryNode[],
+    fieldMetadataIds: string[] = [],
+  ): string[] {
+    if (nodes.length === 0) return fieldMetadataIds;
+
+    const newFieldMetadataIds = nodes
+      .filter(
+        (
+          node,
+        ): node is DataExplorerQueryNodeJoin | DataExplorerQueryNodeSelect =>
+          node.type === 'join' || node.type === 'select',
+      )
+      .map((node) => node.fieldMetadataId)
+      .filter(
+        (fieldMetadataId): fieldMetadataId is string =>
+          fieldMetadataId !== undefined,
+      );
+
+    const childNodes = nodes.flatMap((node) =>
+      node.type !== 'aggregateFunction' ? (node.childNodes ?? []) : [],
+    );
+
+    return this.getSelectFieldMetadataIds(childNodes, [
+      ...fieldMetadataIds,
+      ...newFieldMetadataIds,
+    ]);
+  }
+
+  private async getFieldMetadataById(
+    workspaceId: string,
+    query: DataExplorerQuery,
+  ) {
+    const fieldMetadataIds = [
+      query.measureFieldMetadataId,
+      ...(query.groupBys?.map((groupBy) => groupBy.fieldMetadataId) ?? []),
+      query.orderBy?.fieldMetadataId,
+      ...(query.select ? this.getSelectFieldMetadataIds([query.select]) : []),
+    ].filter(
+      (fieldMetadataId): fieldMetadataId is string =>
+        fieldMetadataId !== undefined,
+    );
+
+    const fieldMetadataEntities =
+      await this.fieldMetadataService.findByIdsWithinWorkspace(
+        workspaceId,
+        fieldMetadataIds,
+      );
+
+    const fieldMetadataById = new Map<string, FieldMetadataEntity>(
+      fieldMetadataEntities.map((fieldMetadata) => [
+        fieldMetadata.id,
+        fieldMetadata,
+      ]),
+    );
+
+    return fieldMetadataById;
+  }
+
+  private getNodeByFieldMetadataId(
+    node?: DataExplorerQueryNode,
+    targetFieldMetadataId?: string,
+  ): DataExplorerQueryNodeJoin | DataExplorerQueryNodeSelect | undefined {
+    if (!targetFieldMetadataId || !node) return;
+
+    if (
+      (node.type === 'join' || node.type === 'select') &&
+      node.fieldMetadataId === targetFieldMetadataId
+    ) {
+      return node;
+    }
+
+    if (node.type !== 'aggregateFunction') {
+      const foundNode = node.childNodes?.find((childNode) =>
+        this.getNodeByFieldMetadataId(childNode, targetFieldMetadataId),
+      );
+
+      if (
+        foundNode &&
+        (foundNode.type === 'join' || foundNode.type === 'select')
+      ) {
+        return foundNode;
+      }
+    }
+  }
+
+  private getParentFieldMetadataIds(
+    node?: NodeLike,
+    targetFieldMetadataId?: string,
+    parentFieldMetadataIds: string[] = [],
+  ): string[] | undefined {
+    if (!targetFieldMetadataId || !node) return;
+
+    if (node.fieldMetadataId === targetFieldMetadataId) {
+      return parentFieldMetadataIds.length > 0
+        ? parentFieldMetadataIds
+        : undefined;
+    }
+
+    if (node.childNodes) {
+      const newPath = node.fieldMetadataId
+        ? [...parentFieldMetadataIds, node.fieldMetadataId]
+        : parentFieldMetadataIds;
+
+      return node.childNodes
+        .map((childNode) =>
+          this.getParentFieldMetadataIds(
+            childNode,
+            targetFieldMetadataId,
+            newPath,
+          ),
+        )
+        .find((result) => result !== undefined);
+    }
+
+    return undefined;
   }
 
   private async getQuery(workspaceId: string, chartId: string) {
@@ -407,10 +545,6 @@ export class ChartService {
   async run(workspaceId: string, chartId: string): Promise<ChartResult> {
     const query = await this.getQuery(workspaceId, chartId);
 
-    console.log('query', query);
-
-    return { chartResult: JSON.stringify([{ measure: 3 }]) };
-    /* 
     const dataSourceSchemaName =
       this.workspaceDataSourceService.getSchemaName(workspaceId);
 
@@ -418,28 +552,36 @@ export class ChartService {
       await this.objectMetadataService.findOneOrFailWithinWorkspace(
         workspaceId,
         {
-          where: { id: chartQuery.sourceObjectMetadataId },
+          where: { id: query.select?.sourceObjectMetadataId },
         },
       );
 
-    const targetMeasureFieldMetadata = await this.getFieldMetadata(
+    const measureFieldMetadata = await this.getFieldMetadata(
       workspaceId,
-      chartQuery.target?.measureFieldMetadataId,
+      query?.measureFieldMetadataId,
     );
 
-    const groupByMeasureFieldMetadata = await this.getFieldMetadata(
+    const groupByFieldMetadata = await this.getFieldMetadata(
       workspaceId,
-      chartQuery.groupBy?.measureFieldMetadataId,
+      query.groupBys?.[0].fieldMetadataId,
+    );
+
+    const fieldMetadataById = await this.getFieldMetadataById(
+      workspaceId,
+      query,
     );
 
     const sourceQueryRelation = await this.getSourceQueryRelation(
       dataSourceSchemaName,
       workspaceId,
       sourceObjectMetadata,
-      chartQuery.target?.relationFieldMetadataIds,
-      targetMeasureFieldMetadata,
-      chartQuery.groupBy?.relationFieldMetadataIds,
-      groupByMeasureFieldMetadata,
+      query,
+      fieldMetadataById,
+    );
+
+    const measureFieldParentFieldMetadataIds = this.getParentFieldMetadataIds(
+      query.select,
+      query.measureFieldMetadataId,
     );
 
     const targetQueryRelations = await this.getQueryRelations(
@@ -448,8 +590,8 @@ export class ChartService {
       sourceObjectMetadata,
       'target',
       sourceQueryRelation,
-      chartQuery.target?.relationFieldMetadataIds,
-      targetMeasureFieldMetadata,
+      measureFieldParentFieldMetadataIds,
+      measureFieldMetadata,
     );
 
     const targetJoinClauses = this.getJoinClauses(
@@ -461,8 +603,13 @@ export class ChartService {
       workspaceId,
       targetQueryRelations,
       sourceQueryRelation.tableName,
-      chartQuery.target?.relationFieldMetadataIds,
-      targetMeasureFieldMetadata,
+      measureFieldParentFieldMetadataIds,
+      measureFieldMetadata,
+    );
+
+    const groupByFieldParentFieldMetadataIds = this.getParentFieldMetadataIds(
+      query.select,
+      query.groupBys?.[0].fieldMetadataId,
     );
 
     const groupByQueryRelations = await this.getQueryRelations(
@@ -471,8 +618,8 @@ export class ChartService {
       sourceObjectMetadata,
       'group_by',
       sourceQueryRelation,
-      chartQuery.groupBy?.relationFieldMetadataIds,
-      groupByMeasureFieldMetadata,
+      groupByFieldParentFieldMetadataIds,
+      groupByFieldMetadata,
     );
 
     const groupByJoinClauses = this.getJoinClauses(
@@ -481,25 +628,19 @@ export class ChartService {
     );
 
     // TODO: Refactor conditions
-    const groupByQualifiedColumn =
-      chartQuery.groupBy?.measureFieldMetadataId ||
-      (chartQuery.groupBy?.relationFieldMetadataIds &&
-        chartQuery.groupBy?.relationFieldMetadataIds?.length > 0)
-        ? await this.getQualifiedColumn(
-            workspaceId,
-            groupByQueryRelations,
-            sourceQueryRelation.tableName,
-            chartQuery.groupBy?.relationFieldMetadataIds,
-            groupByMeasureFieldMetadata,
-          )
-        : undefined;
+    const groupByQualifiedColumn = query.groupBys?.[0]?.fieldMetadataId
+      ? await this.getQualifiedColumn(
+          workspaceId,
+          groupByQueryRelations,
+          sourceQueryRelation.tableName,
+          groupByFieldParentFieldMetadataIds,
+          groupByFieldMetadata,
+        )
+      : undefined;
 
-    const groupByClauseString =
-      chartQuery.groupBy?.measureFieldMetadataId ||
-      (chartQuery.groupBy?.relationFieldMetadataIds &&
-        chartQuery.groupBy?.relationFieldMetadataIds?.length > 0)
-        ? `GROUP BY ${groupByQualifiedColumn}`
-        : '';
+    const groupByClauseString = query.groupBys?.[0]?.fieldMetadataId
+      ? `GROUP BY ${groupByQualifiedColumn}`
+      : '';
 
     const allQueryRelations = [
       sourceQueryRelation,
@@ -513,12 +654,21 @@ export class ChartService {
 
     console.log('commonTableExpressions', commonTableExpressions);
 
-    if (chartQuery.target?.measure === undefined) {
+    if (query.measureFieldMetadataId === undefined) {
       throw new Error('Measure is currently required');
     }
 
+    const targetNode = this.getNodeByFieldMetadataId(
+      query.select,
+      query.measureFieldMetadataId,
+    );
+    const aggregateFunction = targetNode?.childNodes?.find(
+      (childNode): childNode is DataExplorerQueryNodeAggregateFunction =>
+        childNode.type === 'aggregateFunction',
+    )?.aggregateFunction;
+
     const targetSelectColumn = this.getTargetSelectColumn(
-      chartQuery.target?.measure,
+      aggregateFunction,
       targetQualifiedColumn,
     );
 
@@ -531,13 +681,9 @@ export class ChartService {
       .filter((col) => col)
       .join('\n');
 
-    const groupByExcludeNullsWhereClause =
-      (chartQuery.groupBy?.measureFieldMetadataId ||
-        (chartQuery.groupBy?.relationFieldMetadataIds &&
-          chartQuery.groupBy?.relationFieldMetadataIds.length > 0)) &&
-      !chartQuery.groupBy?.includeNulls
-        ? `${groupByQualifiedColumn} IS NOT NULL`
-        : undefined;
+    const groupByExcludeNullsWhereClause = query
+      ? `${groupByQualifiedColumn} IS NOT NULL`
+      : undefined;
 
     const whereClauses = [groupByExcludeNullsWhereClause].filter(
       (whereClause) => whereClause !== undefined,
@@ -565,7 +711,7 @@ export class ChartService {
 
     console.log('result', JSON.stringify(result, undefined, 2));
 
-    return { chartResult: JSON.stringify(result) }; */
+    return { chartResult: JSON.stringify(result) };
   }
 }
 

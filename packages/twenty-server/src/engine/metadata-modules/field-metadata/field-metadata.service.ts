@@ -3,7 +3,13 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
 import { TypeOrmQueryService } from '@ptc-org/nestjs-query-typeorm';
 import isEmpty from 'lodash.isempty';
-import { DataSource, FindOneOptions, Repository } from 'typeorm';
+import {
+  DataSource,
+  FindManyOptions,
+  FindOneOptions,
+  In,
+  Repository,
+} from 'typeorm';
 import { v4 as uuidV4 } from 'uuid';
 
 import { TypeORMService } from 'src/database/typeorm/typeorm.service';
@@ -556,6 +562,21 @@ export class FieldMetadataService extends TypeOrmQueryService<FieldMetadataEntit
         workspaceId,
       );
     }
+  }
+
+  public async findByIdsWithinWorkspace(
+    workspaceId: string,
+    ids: string[],
+    options?: FindManyOptions<FieldMetadataEntity>,
+  ) {
+    return this.fieldMetadataRepository.find({
+      ...options,
+      where: {
+        ...options?.where,
+        id: In(ids),
+        workspaceId,
+      },
+    });
   }
 
   public async findOneOrFail(
