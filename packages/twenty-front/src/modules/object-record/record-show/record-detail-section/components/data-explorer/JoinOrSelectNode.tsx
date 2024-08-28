@@ -1,6 +1,7 @@
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { FieldSelectItem } from '@/object-record/field-path-picker/components/FieldSelectItem';
 import { FIELD_PATH_PICKER_SELECTABLE_LIST_ID } from '@/object-record/field-path-picker/constants/FieldPathPickerSelectableListId';
+import { CurrencyCode } from '@/object-record/record-field/types/CurrencyCode';
 import {
   DataExplorerQueryNodeJoin,
   DataExplorerQueryNodeSelect,
@@ -10,6 +11,7 @@ import { isFieldRelation } from '@/object-record/record-field/types/guards/isFie
 import { NodeChildren } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeChildren';
 import { NodeContainer } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeContainer';
 import { NodeValue } from '@/object-record/record-show/record-detail-section/components/data-explorer/NodeValue';
+import { CurrencyTag } from '@/object-record/record-show/record-detail-section/components/data-explorer/utils/CurrencyTag';
 import { isFieldMetadataSelectable } from '@/object-record/record-show/record-detail-section/components/data-explorer/utils/isFieldMetadataSelectable';
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { DropdownMenu } from '@/ui/layout/dropdown/components/DropdownMenu';
@@ -22,8 +24,16 @@ import { MenuItem } from '@/ui/navigation/menu-item/components/MenuItem';
 import { MenuItemLeftContent } from '@/ui/navigation/menu-item/internals/components/MenuItemLeftContent';
 import { StyledMenuItemBase } from '@/ui/navigation/menu-item/internals/components/StyledMenuItemBase';
 import { useTheme } from '@emotion/react';
+import styled from '@emotion/styled';
 import { useMemo, useState } from 'react';
 import { IconPlus, IconX, useIcons } from 'twenty-ui';
+import { FieldMetadataType } from '~/generated-metadata/graphql';
+
+const StyledValueRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing(1)};
+`;
 
 interface JoinOrSelectNodeProps {
   parentNode: DataExplorerQueryNodeSource | DataExplorerQueryNodeJoin;
@@ -98,75 +108,80 @@ export const JoinOrSelectNode = (props: JoinOrSelectNodeProps) => {
 
   return (
     <NodeContainer>
-      <Dropdown
-        dropdownId={dropdownId}
-        clickableComponent={
-          <NodeValue isValueEmpty={!props.node}>
-            {fieldMetadata ? (
-              <FieldMetadataIcon size={theme.icon.size.sm} />
-            ) : (
-              <IconPlus size={theme.icon.size.sm} />
-            )}
-            {fieldMetadata?.label ?? 'Select field'}
-          </NodeValue>
-        }
-        dropdownComponents={
-          <DropdownMenu>
-            <DropdownMenuSearchInput
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              autoFocus
-            />
-            <DropdownMenuSeparator />
-            <DropdownMenuItemsContainer hasMaxHeight>
-              <SelectableList
-                selectableListId={FIELD_PATH_PICKER_SELECTABLE_LIST_ID}
-                selectableItemIdArray={activeObjectMetadataItems.map(
-                  (objectMetadata) => objectMetadata.id,
-                )}
-                hotkeyScope={props.hotkeyScope}
-              >
-                <StyledMenuItemBase
-                  onClick={() => {
-                    closeDropdown();
-                    props.onChange(undefined);
-                  }}
+      <StyledValueRow>
+        <Dropdown
+          dropdownId={dropdownId}
+          clickableComponent={
+            <NodeValue isValueEmpty={!props.node}>
+              {fieldMetadata ? (
+                <FieldMetadataIcon size={theme.icon.size.sm} />
+              ) : (
+                <IconPlus size={theme.icon.size.sm} />
+              )}
+              {fieldMetadata?.label ?? 'Select field'}
+            </NodeValue>
+          }
+          dropdownComponents={
+            <DropdownMenu>
+              <DropdownMenuSearchInput
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                autoFocus
+              />
+              <DropdownMenuSeparator />
+              <DropdownMenuItemsContainer hasMaxHeight>
+                <SelectableList
+                  selectableListId={FIELD_PATH_PICKER_SELECTABLE_LIST_ID}
+                  selectableItemIdArray={activeObjectMetadataItems.map(
+                    (objectMetadata) => objectMetadata.id,
+                  )}
+                  hotkeyScope={props.hotkeyScope}
                 >
-                  <MenuItemLeftContent LeftIcon={IconX} text="Clear" />
-                </StyledMenuItemBase>
-                {noResult ? (
-                  <MenuItem text="No result" />
-                ) : (
-                  optionsToSelect.map((fieldMetadata) => (
-                    <FieldSelectItem
-                      key={fieldMetadata.id}
-                      fieldMetadata={fieldMetadata}
-                      onSelect={() => {
-                        const joinNode: DataExplorerQueryNodeJoin = {
-                          type: 'join',
-                          fieldMetadataId: fieldMetadata.id,
-                          childNodes: [],
-                        };
-                        const selectNode: DataExplorerQueryNodeSelect = {
-                          type: 'select',
-                          fieldMetadataId: fieldMetadata.id,
-                          childNodes: [],
-                        };
-                        const newNode = isFieldRelation(fieldMetadata)
-                          ? joinNode
-                          : selectNode;
-                        closeDropdown();
-                        props.onChange(newNode);
-                      }}
-                    />
-                  ))
-                )}
-              </SelectableList>
-            </DropdownMenuItemsContainer>
-          </DropdownMenu>
-        }
-        dropdownHotkeyScope={{ scope: props.hotkeyScope }}
-      />
+                  <StyledMenuItemBase
+                    onClick={() => {
+                      closeDropdown();
+                      props.onChange(undefined);
+                    }}
+                  >
+                    <MenuItemLeftContent LeftIcon={IconX} text="Clear" />
+                  </StyledMenuItemBase>
+                  {noResult ? (
+                    <MenuItem text="No result" />
+                  ) : (
+                    optionsToSelect.map((fieldMetadata) => (
+                      <FieldSelectItem
+                        key={fieldMetadata.id}
+                        fieldMetadata={fieldMetadata}
+                        onSelect={() => {
+                          const joinNode: DataExplorerQueryNodeJoin = {
+                            type: 'join',
+                            fieldMetadataId: fieldMetadata.id,
+                            childNodes: [],
+                          };
+                          const selectNode: DataExplorerQueryNodeSelect = {
+                            type: 'select',
+                            fieldMetadataId: fieldMetadata.id,
+                            childNodes: [],
+                          };
+                          const newNode = isFieldRelation(fieldMetadata)
+                            ? joinNode
+                            : selectNode;
+                          closeDropdown();
+                          props.onChange(newNode);
+                        }}
+                      />
+                    ))
+                  )}
+                </SelectableList>
+              </DropdownMenuItemsContainer>
+            </DropdownMenu>
+          }
+          dropdownHotkeyScope={{ scope: props.hotkeyScope }}
+        />
+        {fieldMetadata?.type === FieldMetadataType.Currency && (
+          <CurrencyTag currencyCode={CurrencyCode.USD} />
+        )}
+      </StyledValueRow>
       {props.node && (
         <NodeChildren
           node={props.node}

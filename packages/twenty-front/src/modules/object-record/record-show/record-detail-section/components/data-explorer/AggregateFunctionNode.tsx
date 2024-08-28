@@ -93,6 +93,7 @@ export const AggregateFunctionNode = (props: AggregateFunctionNodeProps) => {
                   <AggregateFunctionSelectItem
                     key={aggregateFunction}
                     aggregateFunction={aggregateFunction}
+                    tagColor={tagColorByAggregateFunction[aggregateFunction]}
                     onSelect={() => {
                       const newNode: DataExplorerQueryNodeAggregateFunction = {
                         type: 'aggregateFunction',
