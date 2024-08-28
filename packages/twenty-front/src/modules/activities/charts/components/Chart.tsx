@@ -8,6 +8,19 @@ import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
 import { useTheme } from '@emotion/react';
 import { useChartDataQuery } from '~/generated/graphql';
 
+const StyledHint = styled.div`
+  color: ${({ theme }) => theme.font.color.tertiary};
+  font-size: ${({ theme }) => theme.font.size.sm};
+  margin-top: ${({ theme }) => theme.spacing(2)};
+  text-align: center;
+  margin: auto;
+`;
+
+const StyledHintGroupBy = styled.span`
+  display: inline;
+  font-weight: ${({ theme }) => theme.font.weight.semiBold};
+`;
+
 const StyledChartContainer = styled.div`
   display: flex;
   flex: 1;
@@ -34,9 +47,7 @@ export const Chart = (props: ChartProps) => {
         chartId: props.targetableObject.id,
       },
     });
-  const chartResult =
-    chartDataResponse?.chartData.chartResult &&
-    JSON.parse(chartDataResponse.chartData.chartResult);
+  const chartResult = chartDataResponse?.dataExplorerQueryResult.result;
 
   const loading: boolean = chartLoading || chartDataLoading;
 
@@ -44,9 +55,13 @@ export const Chart = (props: ChartProps) => {
 
   if (!chart) throw new Error('Could not load chart');
 
-  /* if (!chart?.groupBy) {
-    return <div>{chartResult?.[0].measure}</div>;
-  } */
+  if (!chart.query.groupBys?.[0].fieldMetadataId) {
+    return (
+      <StyledHint>
+        <StyledHintGroupBy>Group by</StyledHintGroupBy> a field to display chart
+      </StyledHint>
+    );
+  }
 
   if (!chartResult) return;
 

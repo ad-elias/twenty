@@ -1,5 +1,5 @@
-import * as Apollo from '@apollo/client';
 import { gql } from '@apollo/client';
+import * as Apollo from '@apollo/client';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -147,11 +147,6 @@ export enum CaptchaDriverType {
   Turnstile = 'Turnstile'
 }
 
-export type ChartResult = {
-  __typename?: 'ChartResult';
-  chartResult?: Maybe<Scalars['String']>;
-};
-
 export type ClientConfig = {
   __typename?: 'ClientConfig';
   api: ApiConfig;
@@ -209,6 +204,12 @@ export type CursorPaging = {
   first?: InputMaybe<Scalars['Int']>;
   /** Paginate last */
   last?: InputMaybe<Scalars['Int']>;
+};
+
+export type DataExplorerResult = {
+  __typename?: 'DataExplorerResult';
+  result?: Maybe<Scalars['JSON']>;
+  sqlQuery?: Maybe<Scalars['String']>;
 };
 
 export type DeleteOneFieldInput = {
@@ -299,10 +300,10 @@ export enum FieldMetadataType {
   Address = 'ADDRESS',
   Boolean = 'BOOLEAN',
   Currency = 'CURRENCY',
+  DataExplorerQuery = 'DATA_EXPLORER_QUERY',
   Date = 'DATE',
   DateTime = 'DATE_TIME',
   Email = 'EMAIL',
-  DataExplorerQuery = 'DATA_EXPLORER_QUERY',
   FullName = 'FULL_NAME',
   Link = 'LINK',
   Links = 'LINKS',
@@ -560,6 +561,11 @@ export type MutationTrackArgs = {
 };
 
 
+export type MutationUpdateOneFieldArgs = {
+  input: UpdateOneFieldMetadataInput;
+};
+
+
 export type MutationUpdateOneObjectArgs = {
   input: UpdateOneObjectInput;
 };
@@ -681,12 +687,12 @@ export type PublishServerlessFunctionInput = {
 export type Query = {
   __typename?: 'Query';
   billingPortalSession: SessionEntity;
-  chartData: ChartResult;
   checkUserExists: UserExists;
   checkWorkspaceInviteHashIsValid: WorkspaceInviteHashValid;
   clientConfig: ClientConfig;
   currentUser: User;
   currentWorkspace: Workspace;
+  dataExplorerQueryResult: DataExplorerResult;
   field: Field;
   fields: FieldConnection;
   findWorkspaceFromInviteHash: Workspace;
@@ -713,11 +719,6 @@ export type QueryBillingPortalSessionArgs = {
 };
 
 
-export type QueryChartDataArgs = {
-  chartId: Scalars['String'];
-};
-
-
 export type QueryCheckUserExistsArgs = {
   captchaToken?: InputMaybe<Scalars['String']>;
   email: Scalars['String'];
@@ -726,6 +727,11 @@ export type QueryCheckUserExistsArgs = {
 
 export type QueryCheckWorkspaceInviteHashIsValidArgs = {
   inviteHash: Scalars['String'];
+};
+
+
+export type QueryDataExplorerQueryResultArgs = {
+  chartId: Scalars['String'];
 };
 
 
@@ -1274,6 +1280,7 @@ export type Field = {
   isSystem?: Maybe<Scalars['Boolean']>;
   label: Scalars['String'];
   name: Scalars['String'];
+  object?: Maybe<Object>;
   options?: Maybe<Scalars['JSON']>;
   relationDefinition?: Maybe<RelationDefinition>;
   settings?: Maybe<Scalars['JSON']>;
@@ -1409,7 +1416,7 @@ export type ChartDataQueryVariables = Exact<{
 }>;
 
 
-export type ChartDataQuery = { __typename?: 'Query', chartData: { __typename?: 'ChartResult', chartResult?: string | null } };
+export type ChartDataQuery = { __typename?: 'Query', dataExplorerQueryResult: { __typename?: 'DataExplorerResult', result?: any | null, sqlQuery?: string | null } };
 
 export type TrackMutationVariables = Exact<{
   type: Scalars['String'];
@@ -1966,8 +1973,9 @@ export type GetTimelineThreadsFromPersonIdLazyQueryHookResult = ReturnType<typeo
 export type GetTimelineThreadsFromPersonIdQueryResult = Apollo.QueryResult<GetTimelineThreadsFromPersonIdQuery, GetTimelineThreadsFromPersonIdQueryVariables>;
 export const ChartDataDocument = gql`
     query ChartData($chartId: String!) {
-  chartData(chartId: $chartId) {
-    chartResult
+  dataExplorerQueryResult(chartId: $chartId) {
+    result
+    sqlQuery
   }
 }
     `;

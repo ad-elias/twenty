@@ -2,16 +2,19 @@ import styled from '@emotion/styled';
 import { useRecoilValue } from 'recoil';
 import {
   IconCalendarEvent,
+  IconChartBar,
   IconCheckbox,
   IconList,
   IconMail,
   IconNotes,
   IconPaperclip,
+  IconTable,
   IconTimelineEvent,
 } from 'twenty-ui';
 
 import { Calendar } from '@/activities/calendar/components/Calendar';
 import { Chart } from '@/activities/charts/components/Chart';
+import { SQLResultTable } from '@/activities/charts/components/SQLResultTable';
 import { EmailThreads } from '@/activities/emails/components/EmailThreads';
 import { Attachments } from '@/activities/files/components/Attachments';
 import { Notes } from '@/activities/notes/components/Notes';
@@ -170,9 +173,15 @@ export const ShowPageRightContainer = ({
       hide: !shouldDisplayCalendarTab || isChart,
     },
     {
+      id: 'table',
+      title: 'Table',
+      Icon: IconTable,
+      hide: !isChart,
+    },
+    {
       id: 'chart',
       title: 'Chart',
-      Icon: IconCalendarEvent,
+      Icon: IconChartBar,
       hide: !isChart,
     },
   ];
@@ -213,6 +222,8 @@ export const ShowPageRightContainer = ({
         return <EmailThreads targetableObject={targetableObject} />;
       case 'calendar':
         return <Calendar targetableObject={targetableObject} />;
+      case 'table':
+        return <SQLResultTable targetableObject={targetableObject} />;
       case 'chart':
         return <Chart targetableObject={targetableObject} />;
       default:

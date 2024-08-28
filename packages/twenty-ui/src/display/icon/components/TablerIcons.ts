@@ -34,6 +34,7 @@ export {
   IconCalendarTime,
   IconCalendarX,
   IconCaretRightFilled,
+  IconChartBar,
   IconChartCandle,
   IconCheck,
   IconCheckbox,

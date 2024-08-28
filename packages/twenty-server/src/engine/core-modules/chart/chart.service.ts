@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
-import { ChartResult } from 'src/engine/core-modules/chart/dtos/chart-result.dto';
+import { DataExplorerResult } from 'src/engine/core-modules/chart/dtos/data-explorer-result.dto';
 import { AliasPrefix } from 'src/engine/core-modules/chart/types/alias-prefix.type';
 import {
   DataExplorerQuery,
@@ -542,7 +542,7 @@ export class ChartService {
     return chart.query;
   }
 
-  async run(workspaceId: string, chartId: string): Promise<ChartResult> {
+  async run(workspaceId: string, chartId: string): Promise<DataExplorerResult> {
     const query = await this.getQuery(workspaceId, chartId);
 
     const dataSourceSchemaName =
@@ -681,9 +681,10 @@ export class ChartService {
       .filter((col) => col)
       .join('\n');
 
-    const groupByExcludeNullsWhereClause = query
-      ? `${groupByQualifiedColumn} IS NOT NULL`
-      : undefined;
+    const groupByExcludeNullsWhereClause =
+      groupByQualifiedColumn && !query.groupBys?.[0]?.includeNulls
+        ? `${groupByQualifiedColumn} IS NOT NULL`
+        : undefined;
 
     const whereClauses = [groupByExcludeNullsWhereClause].filter(
       (whereClause) => whereClause !== undefined,
@@ -711,7 +712,7 @@ export class ChartService {
 
     console.log('result', JSON.stringify(result, undefined, 2));
 
-    return { chartResult: JSON.stringify(result) };
+    return { result, sqlQuery };
   }
 }
 

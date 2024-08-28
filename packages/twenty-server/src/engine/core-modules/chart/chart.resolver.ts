@@ -1,13 +1,13 @@
-import { Args, Resolver, ArgsType, Field, Query } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
+import { Args, ArgsType, Field, Query, Resolver } from '@nestjs/graphql';
 
-import { User } from 'src/engine/core-modules/user/user.entity';
-import { JwtAuthGuard } from 'src/engine/guards/jwt.auth.guard';
-import { Workspace } from 'src/engine/core-modules/workspace/workspace.entity';
-import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
-import { AuthUser } from 'src/engine/decorators/auth/auth-user.decorator';
 import { ChartService } from 'src/engine/core-modules/chart/chart.service';
-import { ChartResult } from 'src/engine/core-modules/chart/dtos/chart-result.dto';
+import { DataExplorerResult } from 'src/engine/core-modules/chart/dtos/data-explorer-result.dto';
+import { User } from 'src/engine/core-modules/user/user.entity';
+import { Workspace } from 'src/engine/core-modules/workspace/workspace.entity';
+import { AuthUser } from 'src/engine/decorators/auth/auth-user.decorator';
+import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
+import { JwtAuthGuard } from 'src/engine/guards/jwt.auth.guard';
 
 @ArgsType()
 class ChartDataArgs {
@@ -20,8 +20,8 @@ class ChartDataArgs {
 export class ChartResolver {
   constructor(private readonly chartService: ChartService) {}
 
-  @Query(() => ChartResult)
-  async chartData(
+  @Query(() => DataExplorerResult)
+  async dataExplorerQueryResult(
     @AuthWorkspace() { id: workspaceId }: Workspace,
     @AuthUser() user: User,
     @Args() { chartId }: ChartDataArgs,
