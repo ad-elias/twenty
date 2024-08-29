@@ -508,12 +508,13 @@ export class ChartService {
       this.workspaceDataSourceService.getSchemaName(workspaceId);
 
     const sourceObjectMetadata =
-      await this.objectMetadataService.findOneOrFailWithinWorkspace(
-        workspaceId,
-        {
-          where: { id: query.select?.sourceObjectMetadataId },
-        },
-      );
+      await this.objectMetadataService.findOneWithinWorkspace(workspaceId, {
+        where: { id: query.select?.sourceObjectMetadataId },
+      });
+
+    if (!sourceObjectMetadata) {
+      throw new NotFoundException('Source object not found');
+    }
 
     const measureFieldMetadata = await this.getFieldMetadata(
       workspaceId,
