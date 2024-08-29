@@ -13,6 +13,8 @@ import { isFieldDataExplorerQuery } from '@/object-record/record-field/types/gua
 import { isFieldDate } from '@/object-record/record-field/types/guards/isFieldDate';
 import { isFieldDateTime } from '@/object-record/record-field/types/guards/isFieldDateTime';
 import { isFieldEmail } from '@/object-record/record-field/types/guards/isFieldEmail';
+import { isFieldEmails } from '@/object-record/record-field/types/guards/isFieldEmails';
+import { isFieldEmailsValue } from '@/object-record/record-field/types/guards/isFieldEmailsValue';
 import { isFieldFullName } from '@/object-record/record-field/types/guards/isFieldFullName';
 import { isFieldFullNameValue } from '@/object-record/record-field/types/guards/isFieldFullNameValue';
 import { isFieldLink } from '@/object-record/record-field/types/guards/isFieldLink';
@@ -120,6 +122,12 @@ export const isFieldValueEmpty = ({
 
   if (isFieldActor(fieldDefinition)) {
     return !isFieldActorValue(fieldValue) || isValueEmpty(fieldValue.name);
+  }
+
+  if (isFieldEmails(fieldDefinition)) {
+    return (
+      !isFieldEmailsValue(fieldValue) || isValueEmpty(fieldValue.primaryEmail)
+    );
   }
 
   throw new Error(

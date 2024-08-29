@@ -212,12 +212,19 @@ const fieldActorMock = {
     name: '',
   },
 };
+const fieldEmailsMock = {
+  name: 'fieldEmails',
+  type: FieldMetadataType.EMAILS,
+  isNullable: false,
+  defaultValue: [{ primaryEmail: '', additionalEmails: {} }],
+};
 
 export const fields = [
   fieldUuidMock,
   fieldTextMock,
   fieldPhoneMock,
   fieldEmailMock,
+  fieldEmailsMock,
   fieldDateTimeMock,
   fieldDateMock,
   fieldBooleanMock,

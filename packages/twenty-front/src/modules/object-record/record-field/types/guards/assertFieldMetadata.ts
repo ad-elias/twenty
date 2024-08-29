@@ -10,6 +10,7 @@ import {
   FieldDateMetadata,
   FieldDateTimeMetadata,
   FieldEmailMetadata,
+  FieldEmailsMetadata,
   FieldFullNameMetadata,
   FieldLinkMetadata,
   FieldLinksMetadata,
@@ -39,37 +40,39 @@ type AssertFieldMetadataFunction = <
             ? FieldDateMetadata
             : E extends 'EMAIL'
               ? FieldEmailMetadata
-              : E extends 'SELECT'
-                ? FieldSelectMetadata
-                : E extends 'MULTI_SELECT'
-                  ? FieldMultiSelectMetadata
-                  : E extends 'RATING'
-                    ? FieldRatingMetadata
-                    : E extends 'LINK'
-                      ? FieldLinkMetadata
-                      : E extends 'LINKS'
-                        ? FieldLinksMetadata
-                        : E extends 'NUMBER'
-                          ? FieldNumberMetadata
-                          : E extends 'PHONE'
-                            ? FieldPhoneMetadata
-                            : E extends 'RELATION'
-                              ? FieldRelationMetadata
-                              : E extends 'TEXT'
-                                ? FieldTextMetadata
-                                : E extends 'UUID'
-                                  ? FieldUuidMetadata
-                                  : E extends 'ADDRESS'
-                                    ? FieldAddressMetadata
-                                    : E extends 'RAW_JSON'
-                                      ? FieldRawJsonMetadata
-                                      : E extends 'DATA_EXPLORER_QUERY'
-                                        ? FieldDataExplorerQueryMetadata
-                                        : E extends 'RICH_TEXT'
-                                          ? FieldTextMetadata
-                                          : E extends 'ACTOR'
-                                            ? FieldActorMetadata
-                                            : never,
+              : E extends 'EMAILS'
+                ? FieldEmailsMetadata
+                : E extends 'SELECT'
+                  ? FieldSelectMetadata
+                  : E extends 'MULTI_SELECT'
+                    ? FieldMultiSelectMetadata
+                    : E extends 'RATING'
+                      ? FieldRatingMetadata
+                      : E extends 'LINK'
+                        ? FieldLinkMetadata
+                        : E extends 'LINKS'
+                          ? FieldLinksMetadata
+                          : E extends 'NUMBER'
+                            ? FieldNumberMetadata
+                            : E extends 'PHONE'
+                              ? FieldPhoneMetadata
+                              : E extends 'RELATION'
+                                ? FieldRelationMetadata
+                                : E extends 'TEXT'
+                                  ? FieldTextMetadata
+                                  : E extends 'UUID'
+                                    ? FieldUuidMetadata
+                                    : E extends 'ADDRESS'
+                                      ? FieldAddressMetadata
+                                      : E extends 'RAW_JSON'
+                                        ? FieldRawJsonMetadata
+                                        : E extends 'DATA_EXPLORER_QUERY'
+                                          ? FieldDataExplorerQueryMetadata
+                                          : E extends 'RICH_TEXT'
+                                            ? FieldTextMetadata
+                                            : E extends 'ACTOR'
+                                              ? FieldActorMetadata
+                                              : never,
 >(
   fieldType: E,
   fieldTypeGuard: (

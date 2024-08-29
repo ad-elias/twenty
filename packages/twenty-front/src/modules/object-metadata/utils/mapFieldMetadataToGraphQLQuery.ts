@@ -157,5 +157,13 @@ ${mapObjectMetadataToGraphQLQuery({
 }`;
   }
 
+  if (fieldType === FieldMetadataType.Emails) {
+    return `${field.name}
+{
+  primaryEmail
+  additionalEmails
+}`;
+  }
+
   return '';
 };

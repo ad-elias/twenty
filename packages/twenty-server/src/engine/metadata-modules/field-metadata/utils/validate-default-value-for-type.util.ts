@@ -13,6 +13,7 @@ import {
   FieldMetadataDefaultValueCurrency,
   FieldMetadataDefaultValueDate,
   FieldMetadataDefaultValueDateTime,
+  FieldMetadataDefaultValueEmails,
   FieldMetadataDefaultValueFullName,
   FieldMetadataDefaultValueLink,
   FieldMetadataDefaultValueLinks,
@@ -54,6 +55,7 @@ export const defaultValueValidatorsMap = {
   [FieldMetadataType.LINKS]: [FieldMetadataDefaultValueLinks],
   [FieldMetadataType.DATA_EXPLORER_QUERY]: [FieldMetadataDefaultValueRawJson],
   [FieldMetadataType.ACTOR]: [FieldMetadataDefaultActor],
+  [FieldMetadataType.EMAILS]: [FieldMetadataDefaultValueEmails],
 };
 
 type ValidationResult = {
