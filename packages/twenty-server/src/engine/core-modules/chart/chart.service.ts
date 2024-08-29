@@ -8,12 +8,11 @@ import { AliasPrefix } from 'src/engine/core-modules/chart/types/alias-prefix.ty
 import {
   DataExplorerQuery,
   DataExplorerQueryNode,
-  DataExplorerQueryNodeAggregateFunction,
   DataExplorerQueryNodeJoin,
   DataExplorerQueryNodeSelect,
 } from 'src/engine/core-modules/chart/types/chart-query';
 import { CommonTableExpressionDefinition } from 'src/engine/core-modules/chart/types/common-table-expression-definition.type';
-import { QueryRelation } from 'src/engine/core-modules/chart/types/query-relation.type';
+import { JoinDefinition } from 'src/engine/core-modules/chart/types/join-definition.type';
 import {
   FieldMetadataEntity,
   FieldMetadataType,
@@ -102,10 +101,10 @@ export class ChartService {
     aliasPrefix: AliasPrefix,
     oppositeObjectMetadata: ObjectMetadataEntity,
     relationMetadata: RelationMetadataEntity,
-    joinTargetQueryRelation: QueryRelation,
+    joinTargetQueryRelation: JoinDefinition,
     isLastRelationField?: boolean,
     measureFieldMetadata?: FieldMetadataEntity,
-  ): Promise<QueryRelation | undefined> {
+  ): Promise<JoinDefinition | undefined> {
     const fromIsExistingTable =
       relationMetadata?.fromObjectMetadataId === objectMetadata.id;
     const toJoinFieldName = computeColumnName(
@@ -118,14 +117,14 @@ export class ChartService {
 
     const baseTableName = computeObjectTargetTable(oppositeObjectMetadata);
 
-    const commonTableExpressionDefinition = isLastRelationField
-      ? await this.getCommonTableExpressionDefinition(
-          workspaceId,
-          dataSourceSchemaName,
-          baseTableName,
-          measureFieldMetadata,
-        )
-      : undefined;
+    const commonTableExpressionDefinition =
+      isLastRelationField && measureFieldMetadata
+        ? await this.getCommonTableExpressionDefinition(
+            dataSourceSchemaName,
+            baseTableName,
+            measureFieldMetadata,
+          )
+        : undefined;
 
     const rightTableName =
       commonTableExpressionDefinition?.resultSetName ?? baseTableName;
@@ -162,14 +161,14 @@ export class ChartService {
     workspaceId: string,
     sourceObjectMetadata: ObjectMetadataEntity,
     aliasPrefix: AliasPrefix,
-    sourceQueryRelation: QueryRelation,
+    sourceQueryRelation: JoinDefinition,
     relationFieldMetadataIds?: string[],
     measureFieldMetadata?: FieldMetadataEntity,
   ) {
     if (!relationFieldMetadataIds || relationFieldMetadataIds.length === 0)
       return [];
     let objectMetadata = sourceObjectMetadata;
-    const queryRelations: QueryRelation[] = [];
+    const queryRelations: JoinDefinition[] = [];
 
     for (let i = 0; i < relationFieldMetadataIds.length; i++) {
       const fieldMetadataId = relationFieldMetadataIds[i];
@@ -215,7 +214,7 @@ export class ChartService {
 
   private getJoinClauses(
     dataSourceSchema: string,
-    chartQueryRelations: QueryRelation[],
+    chartQueryRelations: JoinDefinition[],
   ): string[] {
     return chartQueryRelations.map((queryRelation, i) => {
       if (!queryRelation.joinTarget) {
@@ -267,7 +266,7 @@ export class ChartService {
 
   private async getQualifiedColumn(
     workspaceId: string,
-    targetQueryRelations: QueryRelation[],
+    targetQueryRelations: JoinDefinition[],
     sourceTableName: string,
     relationFieldMetadataIds?: string[],
     measureFieldMetadata?: FieldMetadataEntity,
@@ -283,24 +282,21 @@ export class ChartService {
     const columnName =
       measureFieldMetadata?.name ?? lastTargetRelationFieldMetadata?.name;
 
-    const lastQueryRelation: QueryRelation | undefined =
+    const lastQueryRelation: JoinDefinition | undefined =
       targetQueryRelations[targetQueryRelations.length - 1];
     const tableAlias = lastQueryRelation?.tableAlias ?? sourceTableName;
 
     return `"${tableAlias}"."${columnName}"`;
   }
 
-  private async getCommonTableExpressionDefinition(
-    workspaceId: string,
+  private getCommonTableExpressionDefinition(
     dataSourceSchemaName: string,
     baseTableName: string,
-    measureFieldMetadata?: FieldMetadataEntity,
-  ): Promise<CommonTableExpressionDefinition | undefined> {
-    if (!measureFieldMetadata) return;
+    fieldMetadata: FieldMetadataEntity,
+  ): CommonTableExpressionDefinition | undefined {
+    const resultSetName = `${baseTableName}_cte`;
 
-    const resultSetName = `${baseTableName}_cte`; // TODO: Unique identifier
-
-    switch (measureFieldMetadata.type) {
+    switch (fieldMetadata.type) {
       case FieldMetadataType.CURRENCY:
         return {
           resultSetName,
@@ -308,14 +304,14 @@ export class ChartService {
             WITH "${resultSetName}" AS (
               SELECT
                 *,
-                "${measureFieldMetadata.name}AmountMicros" / 1000000.0 *
-                CASE "${measureFieldMetadata.name}CurrencyCode"
+                "${fieldMetadata.name}AmountMicros" / 1000000.0 *
+                CASE "${fieldMetadata.name}CurrencyCode"
                   WHEN 'EUR' THEN 1.10
                   WHEN 'GBP' THEN 1.29
                   WHEN 'USD' THEN 1.00
                   -- TODO: Get rates from external API and cache them
                   ELSE 1.0
-                END AS "${measureFieldMetadata.name}"
+                END AS "${fieldMetadata.name}"
               FROM
                 "${dataSourceSchemaName}"."${baseTableName}"
             )
@@ -324,13 +320,134 @@ export class ChartService {
     }
   }
 
+  private getCommonTableExpressionDefinitionsForTable(
+    dataSourceSchemaName: string,
+    tableName: string,
+    fieldMetadataEntities: FieldMetadataEntity[],
+  ) {
+    const commonTableExpressionDefinitions = fieldMetadataEntities.reduce(
+      (commonTableExpressionDefinitions, fieldMetadataEntity) => {
+        const previousCommonTableExpressionDefinition: CommonTableExpressionDefinition =
+          commonTableExpressionDefinitions[
+            commonTableExpressionDefinitions.length - 1
+          ];
+
+        const baseTableName =
+          previousCommonTableExpressionDefinition?.resultSetName ?? tableName;
+
+        const newCommonTableExpressionDefinition =
+          this.getCommonTableExpressionDefinition(
+            dataSourceSchemaName,
+            baseTableName,
+            fieldMetadataEntity,
+          );
+
+        if (!newCommonTableExpressionDefinition)
+          return commonTableExpressionDefinitions;
+
+        return [
+          ...commonTableExpressionDefinitions,
+          newCommonTableExpressionDefinition,
+        ];
+      },
+      [] as CommonTableExpressionDefinition[],
+    );
+
+    return commonTableExpressionDefinitions;
+  }
+
+  private getCommonTableExpressionDefinitionsFromLeafMetadataEntities(
+    dataSourceSchemaName: string,
+    leafFieldMetadataEntities: FieldMetadataEntity[],
+  ) {
+    const leafFieldMetadataEntitiesByTableName =
+      leafFieldMetadataEntities.reduce(
+        (leafFieldMetadataEntitiesByTableName, fieldMetadataEntity) => {
+          const tableName = computeObjectTargetTable(
+            fieldMetadataEntity.object,
+          );
+
+          return {
+            ...leafFieldMetadataEntitiesByTableName,
+            [tableName]: [
+              ...(leafFieldMetadataEntitiesByTableName[tableName] ?? []),
+              fieldMetadataEntity,
+            ],
+          };
+        },
+        {} as Record<string, FieldMetadataEntity[]>,
+      );
+
+    const commonTableExpressionDefinitionsByTableName = Object.entries(
+      leafFieldMetadataEntitiesByTableName,
+    ).reduce<Record<string, CommonTableExpressionDefinition[]>>(
+      (
+        commonTableExpressionDefinitionsByTableName,
+        [tableName, fieldMetadataEntities],
+      ) => {
+        const commonTableExpressionDefinitionsForTable =
+          this.getCommonTableExpressionDefinitionsForTable(
+            dataSourceSchemaName,
+            tableName,
+            fieldMetadataEntities,
+          );
+
+        return {
+          ...commonTableExpressionDefinitionsByTableName,
+          [tableName]: commonTableExpressionDefinitionsForTable,
+        };
+      },
+      {} as Record<string, CommonTableExpressionDefinition[]>,
+    );
+
+    const commonTableExpressionDefinitions = Object.values(
+      commonTableExpressionDefinitionsByTableName,
+    ).flat();
+
+    const lastResultSetNameByTableName = new Map(
+      Object.entries(commonTableExpressionDefinitionsByTableName).map(
+        ([tableName, commonTableExpressionDefinitions]) => {
+          return [
+            tableName,
+            commonTableExpressionDefinitions[
+              commonTableExpressionDefinitions.length - 1
+            ]?.resultSetName,
+          ];
+        },
+      ),
+    );
+
+    return {
+      commonTableExpressionDefinitions,
+      lastResultSetNameByTableName,
+    };
+  }
+
+  private getCommonTableExpressionDefinitions(
+    dataSourceSchemaName: string,
+    query: DataExplorerQuery,
+    fieldMetadataById: Map<string, FieldMetadataEntity>,
+  ) {
+    const leafFieldMetadataIds = this.getLeafFieldMetadataIds(query);
+
+    const leafFieldMetadataEntities = leafFieldMetadataIds.map(
+      (fieldMetadataId) =>
+        fieldMetadataById.get(fieldMetadataId) as FieldMetadataEntity,
+    );
+
+    return this.getCommonTableExpressionDefinitionsFromLeafMetadataEntities(
+      dataSourceSchemaName,
+      leafFieldMetadataEntities,
+    );
+  }
+
   private async getSourceQueryRelation(
     dataSourceSchemaName: string,
     workspaceId: string,
     sourceObjectMetadata: ObjectMetadataEntity,
     query: DataExplorerQuery,
     fieldMetadataById: Map<string | undefined, FieldMetadataEntity>,
-  ): Promise<QueryRelation> {
+  ): Promise<JoinDefinition> {
     const baseTableName = computeObjectTargetTable(sourceObjectMetadata);
 
     const measureFieldMetadata = fieldMetadataById.get(
@@ -342,7 +459,6 @@ export class ChartService {
 
     const targetCommonTableExpressionDefinition = targetObjectIsSourceObject
       ? await this.getCommonTableExpressionDefinition(
-          workspaceId,
           dataSourceSchemaName,
           baseTableName,
           measureFieldMetadata,
@@ -358,7 +474,6 @@ export class ChartService {
 
     const groupByCommonTableExpressionDefinition = groupByObjectIsSourceObject
       ? await this.getCommonTableExpressionDefinition(
-          workspaceId,
           dataSourceSchemaName,
           targetCommonTableExpressionDefinition?.resultSetName ?? baseTableName,
           groupByFieldMetadata,
@@ -500,6 +615,29 @@ export class ChartService {
     return undefined;
   }
 
+  private getLeafFieldMetadataIds(
+    node?: NodeLike,
+    leafFieldMetadataIds: string[] = [],
+  ): string[] {
+    if (!node || !node.fieldMetadataId) return leafFieldMetadataIds;
+
+    const isLeaf = node.childNodes?.every(
+      (childNode) => !childNode.fieldMetadataId,
+    );
+
+    if (isLeaf) {
+      return [...leafFieldMetadataIds, node.fieldMetadataId];
+    }
+
+    return (
+      node.childNodes?.reduce(
+        (newLeafFieldMetadataIds, childNode) =>
+          this.getLeafFieldMetadataIds(childNode, newLeafFieldMetadataIds),
+        leafFieldMetadataIds,
+      ) ?? leafFieldMetadataIds
+    );
+  }
+
   async run(
     workspaceId: string,
     query: DataExplorerQuery,
@@ -516,7 +654,7 @@ export class ChartService {
       throw new NotFoundException('Source object not found');
     }
 
-    const measureFieldMetadata = await this.getFieldMetadata(
+    /* const measureFieldMetadata = await this.getFieldMetadata(
       workspaceId,
       query?.measureFieldMetadataId,
     );
@@ -639,9 +777,26 @@ export class ChartService {
     const joinClausesString = [targetJoinClauses, groupByJoinClauses]
       .flat()
       .filter((col) => col)
-      .join('\n');
+      .join('\n'); */
 
-    const groupByExcludeNullsWhereClause =
+    // TODO:
+    // 1. Resolve CTEs
+    // 2. Resolve join clauses
+    // 3. Resolve select clauses
+
+    const fieldMetadataById = await this.getFieldMetadataById(
+      workspaceId,
+      query,
+    );
+
+    const { commonTableExpressionDefinitions, lastResultSetNameByTableName } =
+      this.getCommonTableExpressionDefinitions(
+        dataSourceSchemaName,
+        query,
+        fieldMetadataById,
+      );
+
+    /* const groupByExcludeNullsWhereClause =
       groupByQualifiedColumn && !query.groupBys?.[0]?.includeNulls
         ? `${groupByQualifiedColumn} IS NOT NULL`
         : undefined;
@@ -672,6 +827,8 @@ export class ChartService {
 
     console.log('rows', JSON.stringify(rows, undefined, 2));
 
-    return { rows, sqlQuery };
+    return { rows, sqlQuery }; */
+
+    return { rows: [{ measure: 3 }], sqlQuery: '' };
   }
 }
