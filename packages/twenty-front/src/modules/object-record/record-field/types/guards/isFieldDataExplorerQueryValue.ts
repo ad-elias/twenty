@@ -87,8 +87,8 @@ const dataExplorerQueryGroupBySchema = z.object({
   groups: z
     .array(
       z.object({
-        upperLimit: z.number(),
-        lowerLimit: z.number(),
+        upperLimit: z.number().optional(),
+        lowerLimit: z.number().optional(),
       }),
     )
     .optional(),

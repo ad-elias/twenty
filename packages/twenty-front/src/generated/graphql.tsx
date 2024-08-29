@@ -208,7 +208,7 @@ export type CursorPaging = {
 
 export type DataExplorerResult = {
   __typename?: 'DataExplorerResult';
-  result?: Maybe<Scalars['JSON']>;
+  rows?: Maybe<Scalars['JSON']>;
   sqlQuery?: Maybe<Scalars['String']>;
 };
 
@@ -394,6 +394,7 @@ export type Mutation = {
   deleteOneServerlessFunction: ServerlessFunction;
   deleteUser: User;
   disablePostgresProxy: PostgresCredentials;
+  disableWorkflowTrigger: Scalars['Boolean'];
   emailPasswordResetLink: EmailPasswordResetLink;
   enablePostgresProxy: PostgresCredentials;
   enableWorkflowTrigger: Scalars['Boolean'];
@@ -487,6 +488,11 @@ export type MutationDeleteOneRelationArgs = {
 
 export type MutationDeleteOneServerlessFunctionArgs = {
   input: DeleteServerlessFunctionInput;
+};
+
+
+export type MutationDisableWorkflowTriggerArgs = {
+  workflowVersionId: Scalars['String'];
 };
 
 
@@ -693,7 +699,7 @@ export type Query = {
   clientConfig: ClientConfig;
   currentUser: User;
   currentWorkspace: Workspace;
-  dataExplorerQueryResult: DataExplorerResult;
+  dataExplorerResult: DataExplorerResult;
   field: Field;
   fields: FieldConnection;
   findWorkspaceFromInviteHash: Workspace;
@@ -731,8 +737,8 @@ export type QueryCheckWorkspaceInviteHashIsValidArgs = {
 };
 
 
-export type QueryDataExplorerQueryResultArgs = {
-  chartId: Scalars['String'];
+export type QueryDataExplorerResultArgs = {
+  dataExplorerQuery: Scalars['String'];
 };
 
 
@@ -1412,12 +1418,12 @@ export type GetTimelineThreadsFromPersonIdQueryVariables = Exact<{
 
 export type GetTimelineThreadsFromPersonIdQuery = { __typename?: 'Query', getTimelineThreadsFromPersonId: { __typename?: 'TimelineThreadsWithTotal', totalNumberOfThreads: number, timelineThreads: Array<{ __typename?: 'TimelineThread', id: any, read: boolean, visibility: MessageChannelVisibility, lastMessageReceivedAt: string, lastMessageBody: string, subject: string, numberOfMessagesInThread: number, participantCount: number, firstParticipant: { __typename?: 'TimelineThreadParticipant', personId?: any | null, workspaceMemberId?: any | null, firstName: string, lastName: string, displayName: string, avatarUrl: string, handle: string }, lastTwoParticipants: Array<{ __typename?: 'TimelineThreadParticipant', personId?: any | null, workspaceMemberId?: any | null, firstName: string, lastName: string, displayName: string, avatarUrl: string, handle: string }> }> } };
 
-export type ChartDataQueryVariables = Exact<{
-  chartId: Scalars['String'];
+export type DataExplorerResultQueryVariables = Exact<{
+  dataExplorerQuery: Scalars['String'];
 }>;
 
 
-export type ChartDataQuery = { __typename?: 'Query', dataExplorerQueryResult: { __typename?: 'DataExplorerResult', result?: any | null, sqlQuery?: string | null } };
+export type DataExplorerResultQuery = { __typename?: 'Query', dataExplorerResult: { __typename?: 'DataExplorerResult', rows?: any | null, sqlQuery?: string | null } };
 
 export type TrackMutationVariables = Exact<{
   type: Scalars['String'];
@@ -1972,42 +1978,42 @@ export function useGetTimelineThreadsFromPersonIdLazyQuery(baseOptions?: Apollo.
 export type GetTimelineThreadsFromPersonIdQueryHookResult = ReturnType<typeof useGetTimelineThreadsFromPersonIdQuery>;
 export type GetTimelineThreadsFromPersonIdLazyQueryHookResult = ReturnType<typeof useGetTimelineThreadsFromPersonIdLazyQuery>;
 export type GetTimelineThreadsFromPersonIdQueryResult = Apollo.QueryResult<GetTimelineThreadsFromPersonIdQuery, GetTimelineThreadsFromPersonIdQueryVariables>;
-export const ChartDataDocument = gql`
-    query ChartData($chartId: String!) {
-  dataExplorerQueryResult(chartId: $chartId) {
-    result
+export const DataExplorerResultDocument = gql`
+    query DataExplorerResult($dataExplorerQuery: String!) {
+  dataExplorerResult(dataExplorerQuery: $dataExplorerQuery) {
+    rows
     sqlQuery
   }
 }
     `;
 
 /**
- * __useChartDataQuery__
+ * __useDataExplorerResultQuery__
  *
- * To run a query within a React component, call `useChartDataQuery` and pass it any options that fit your needs.
- * When your component renders, `useChartDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useDataExplorerResultQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDataExplorerResultQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useChartDataQuery({
+ * const { data, loading, error } = useDataExplorerResultQuery({
  *   variables: {
- *      chartId: // value for 'chartId'
+ *      dataExplorerQuery: // value for 'dataExplorerQuery'
  *   },
  * });
  */
-export function useChartDataQuery(baseOptions: Apollo.QueryHookOptions<ChartDataQuery, ChartDataQueryVariables>) {
+export function useDataExplorerResultQuery(baseOptions: Apollo.QueryHookOptions<DataExplorerResultQuery, DataExplorerResultQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ChartDataQuery, ChartDataQueryVariables>(ChartDataDocument, options);
+        return Apollo.useQuery<DataExplorerResultQuery, DataExplorerResultQueryVariables>(DataExplorerResultDocument, options);
       }
-export function useChartDataLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ChartDataQuery, ChartDataQueryVariables>) {
+export function useDataExplorerResultLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DataExplorerResultQuery, DataExplorerResultQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ChartDataQuery, ChartDataQueryVariables>(ChartDataDocument, options);
+          return Apollo.useLazyQuery<DataExplorerResultQuery, DataExplorerResultQueryVariables>(DataExplorerResultDocument, options);
         }
-export type ChartDataQueryHookResult = ReturnType<typeof useChartDataQuery>;
-export type ChartDataLazyQueryHookResult = ReturnType<typeof useChartDataLazyQuery>;
-export type ChartDataQueryResult = Apollo.QueryResult<ChartDataQuery, ChartDataQueryVariables>;
+export type DataExplorerResultQueryHookResult = ReturnType<typeof useDataExplorerResultQuery>;
+export type DataExplorerResultLazyQueryHookResult = ReturnType<typeof useDataExplorerResultLazyQuery>;
+export type DataExplorerResultQueryResult = Apollo.QueryResult<DataExplorerResultQuery, DataExplorerResultQueryVariables>;
 export const TrackDocument = gql`
     mutation Track($type: String!, $data: JSON!) {
   track(type: $type, data: $data) {

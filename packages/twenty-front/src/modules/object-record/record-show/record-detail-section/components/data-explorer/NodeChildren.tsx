@@ -37,13 +37,6 @@ export const NodeChildren = <T extends DataExplorerQueryNodeWithChildren>(
         (childNode) => childNode !== undefined,
       ),
     };
-    console.log(
-      'onChildChange',
-      'changedNode',
-      changedNode,
-      'nodeWithChangedChild',
-      nodeWithChangedChild,
-    );
     props.onChange(nodeWithChangedChild);
   };
 

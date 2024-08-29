@@ -29,7 +29,6 @@ import {
 import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
 import { computeObjectTargetTable } from 'src/engine/utils/compute-object-target-table.util';
 import { WorkspaceDataSourceService } from 'src/engine/workspace-datasource/workspace-datasource.service';
-import { ChartWorkspaceEntity } from 'src/modules/charts/standard-objects/chart.workspace-entity';
 
 interface NodeLike {
   fieldMetadataId?: string;
@@ -501,50 +500,10 @@ export class ChartService {
     return undefined;
   }
 
-  private async getQuery(workspaceId: string, chartId: string) {
-    const repository =
-      await this.twentyORMManager.getRepository(ChartWorkspaceEntity);
-
-    const chart = await repository.findOneByOrFail({ id: chartId });
-
-    /* const sourceObjectMetadata =
-      await this.objectMetadataService.findOneOrFailWithinWorkspace(
-        workspaceId,
-        {
-          where: { nameSingular: chart?.sourceObjectNameSingular },
-        },
-      );
-
-    const lastTargetFieldMetadataId = chart.target?.[chart.target?.length - 1];
-
-    const lastTargetFieldMetadata = await this.getFieldMetadata(
-      workspaceId,
-      lastTargetFieldMetadataId,
-    );
-
-    const targetMeasureFieldMetadata =
-      (lastTargetFieldMetadata?.type !== FieldMetadataType.RELATION &&
-        lastTargetFieldMetadata) ||
-      undefined;
-
-    const lastGroupByFieldMetadataId =
-      chart.groupBy?.[chart.groupBy?.length - 1];
-    const lastGroupByFieldMetadata = await this.getFieldMetadata(
-      workspaceId,
-      lastGroupByFieldMetadataId,
-    );
-
-    const groupByMeasureFieldMetadata =
-      (lastGroupByFieldMetadata?.type !== FieldMetadataType.RELATION &&
-        lastGroupByFieldMetadata) ||
-      undefined; */
-
-    return chart.query;
-  }
-
-  async run(workspaceId: string, chartId: string): Promise<DataExplorerResult> {
-    const query = await this.getQuery(workspaceId, chartId);
-
+  async run(
+    workspaceId: string,
+    query: DataExplorerQuery,
+  ): Promise<DataExplorerResult> {
     const dataSourceSchemaName =
       this.workspaceDataSourceService.getSchemaName(workspaceId);
 
@@ -704,16 +663,14 @@ export class ChartService {
 
     console.log('sqlQuery\n', sqlQuery);
 
-    const result = await this.workspaceDataSourceService.executeRawQuery(
+    const rows = await this.workspaceDataSourceService.executeRawQuery(
       sqlQuery,
       [],
       workspaceId,
     );
 
-    console.log('result', JSON.stringify(result, undefined, 2));
+    console.log('rows', JSON.stringify(rows, undefined, 2));
 
-    return { result, sqlQuery };
+    return { rows, sqlQuery };
   }
 }
-
-// TODO: only allow counting source object records?

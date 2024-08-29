@@ -1,3 +1,4 @@
+import { useDataExplorerResult } from '@/activities/charts/hooks/useDataExplorerResult';
 import { SkeletonLoader } from '@/activities/components/SkeletonLoader';
 import { ActivityTargetableObject } from '@/activities/types/ActivityTargetableEntity';
 import { Table } from '@/ui/layout/table/components/Table';
@@ -6,7 +7,6 @@ import { TableCell } from '@/ui/layout/table/components/TableCell';
 import { TableHeader } from '@/ui/layout/table/components/TableHeader';
 import { TableRow } from '@/ui/layout/table/components/TableRow';
 import styled from '@emotion/styled';
-import { useChartDataQuery } from '~/generated/graphql';
 
 const StyledTableContainer = styled.div`
   overflow-x: auto;
@@ -35,15 +35,12 @@ interface SQLResultTableProps {
 }
 
 export const SQLResultTable = (props: SQLResultTableProps) => {
-  const { data: dataExplorerResult, loading: dataExplorerResultLoading } =
-    useChartDataQuery({
-      variables: {
-        chartId: props.targetableObject.id,
-      },
-    });
+  const { dataExplorerResult, dataExplorerResultLoading } =
+    useDataExplorerResult(props.targetableObject.id);
 
-  const rows: { [columnName: string]: any }[] =
-    dataExplorerResult?.dataExplorerQueryResult.result;
+  const rows: { [columnName: string]: any }[] = dataExplorerResult?.rows;
+
+  if (!rows) return null;
 
   const isLoading: boolean = dataExplorerResultLoading;
 

@@ -7,7 +7,7 @@ import GraphQLJSON from 'graphql-type-json';
 export class DataExplorerResult {
   @Field(() => GraphQLJSON, { nullable: true })
   @IsOptional()
-  result?: { [T in string]: any }[];
+  rows?: { [T in string]: any }[];
 
   @Field(() => String, { nullable: true })
   @IsOptional()

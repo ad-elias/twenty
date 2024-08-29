@@ -10,9 +10,9 @@ import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorat
 import { JwtAuthGuard } from 'src/engine/guards/jwt.auth.guard';
 
 @ArgsType()
-class ChartDataArgs {
+class DataExplorerResultArgs {
   @Field(() => String)
-  chartId: string;
+  dataExplorerQuery: string;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -21,11 +21,14 @@ export class ChartResolver {
   constructor(private readonly chartService: ChartService) {}
 
   @Query(() => DataExplorerResult)
-  async dataExplorerQueryResult(
+  async dataExplorerResult(
     @AuthWorkspace() { id: workspaceId }: Workspace,
     @AuthUser() user: User,
-    @Args() { chartId }: ChartDataArgs,
+    @Args() { dataExplorerQuery }: DataExplorerResultArgs,
   ) {
-    return await this.chartService.run(workspaceId, chartId);
+    return await this.chartService.run(
+      workspaceId,
+      JSON.parse(dataExplorerQuery),
+    );
   }
 }

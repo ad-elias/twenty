@@ -51,6 +51,7 @@ export const RecordDetailDataExplorerQuerySection = ({
               select: newNode,
             };
             setFieldValue(newDataExplorerQuery);
+            persistField(newDataExplorerQuery);
           }}
         />
       </StyledSection>
@@ -66,6 +67,7 @@ export const RecordDetailDataExplorerQuerySection = ({
               measureFieldMetadataId: newFieldMetadataId,
             };
             setFieldValue(newDataExplorerQuery);
+            persistField(newDataExplorerQuery);
           }}
           dropdownId="data-explorer-query-measure-dropdown"
         />
@@ -86,6 +88,7 @@ export const RecordDetailDataExplorerQuerySection = ({
               ],
             };
             setFieldValue(newDataExplorerQuery);
+            persistField(newDataExplorerQuery);
           }}
           dropdownId="data-explorer-query-group-by-dropdown"
         />
@@ -104,15 +107,10 @@ export const RecordDetailDataExplorerQuerySection = ({
               },
             };
             setFieldValue(newDataExplorerQuery);
+            persistField(newDataExplorerQuery);
           }}
           dropdownId="data-explorer-query-order-by-dropdown"
         />
-        <button
-          style={{ marginTop: 12 }}
-          onClick={() => persistField(fieldValue)}
-        >
-          Save
-        </button>
       </StyledSection>
     </RecordDetailSection>
   );

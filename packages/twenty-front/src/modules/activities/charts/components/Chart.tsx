@@ -1,12 +1,13 @@
 import styled from '@emotion/styled';
 import { ResponsiveBar } from '@nivo/bar';
 
+import { useDataExplorerResult } from '@/activities/charts/hooks/useDataExplorerResult';
 import { Chart as ChartType } from '@/activities/charts/types/Chart';
 import { SkeletonLoader } from '@/activities/components/SkeletonLoader';
 import { ActivityTargetableObject } from '@/activities/types/ActivityTargetableEntity';
+import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
 import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
 import { useTheme } from '@emotion/react';
-import { useChartDataQuery } from '~/generated/graphql';
 
 const StyledHint = styled.div`
   color: ${({ theme }) => theme.font.color.tertiary};
@@ -38,18 +39,13 @@ export const Chart = (props: ChartProps) => {
 
   const { record: chart, loading: chartLoading } = useFindOneRecord<ChartType>({
     objectRecordId: props.targetableObject.id,
-    objectNameSingular: props.targetableObject.targetObjectNameSingular,
+    objectNameSingular: CoreObjectNameSingular.Chart,
   });
 
-  const { data: chartDataResponse, loading: chartDataLoading } =
-    useChartDataQuery({
-      variables: {
-        chartId: props.targetableObject.id,
-      },
-    });
-  const chartResult = chartDataResponse?.dataExplorerQueryResult.result;
+  const { dataExplorerResult, dataExplorerResultLoading } =
+    useDataExplorerResult(props.targetableObject.id);
 
-  const loading: boolean = chartLoading || chartDataLoading;
+  const loading: boolean = chartLoading || dataExplorerResultLoading;
 
   if (loading) return <SkeletonLoader />;
 
@@ -63,16 +59,18 @@ export const Chart = (props: ChartProps) => {
     );
   }
 
-  if (!chartResult) return;
+  if (!dataExplorerResult?.rows) return;
 
   const margin = theme.spacingMultiplicator * 12;
 
-  const indexBy = Object.keys(chartResult[0]).find((key) => key !== 'measure');
+  const indexBy = Object.keys(dataExplorerResult?.rows?.[0]).find(
+    (key) => key !== 'measure',
+  );
 
   return (
     <StyledChartContainer>
       <ResponsiveBar
-        data={chartResult}
+        data={dataExplorerResult?.rows}
         keys={['measure']}
         indexBy={indexBy}
         margin={{ top: margin, right: margin, bottom: margin, left: margin }}
